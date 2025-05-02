@@ -52,7 +52,7 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/Andersoncrs5/blogSimple-nestjs.git
+   git clone https://github.com/Andersoncrs5/blog-nestjs
    cd project
    ```
 2. Install dependencies:

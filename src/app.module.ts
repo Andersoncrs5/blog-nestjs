@@ -17,7 +17,7 @@ import { Comment } from "src/comment/entities/comment.entity";
 import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
 import { AdmModule } from './adm/adm.module';
-import { NotificationModule } from './notification/notification.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { NotificationModule } from './notification/notification.module';
       host: process.env.DB_HOST || 'localhost',
       port: Number(process.env.DB_PORT) || 5432,
       username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || 'postgres',
+      password: process.env.DB_PASS || '',
       database: process.env.DB_NAME || 'blog',
       entities: [User, Post, Like, FavoritePost, Comment, Category], 
       autoLoadEntities: true, 
@@ -41,7 +41,8 @@ import { NotificationModule } from './notification/notification.module';
     LikeModule,
     AuthModule,
     AdmModule,
-    NotificationModule,
+    NotificationsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
