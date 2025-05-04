@@ -9,7 +9,6 @@ import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
@@ -33,7 +32,7 @@ export class PostController {
   }
 
   @Get('/findAllOfUser')
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
@@ -49,8 +48,8 @@ export class PostController {
     return await this.postService.findAllOfUser(+req.user.sub, pageNumber, limitNumber);
   }
 
-  @Get(':id')
-  @HttpCode(HttpStatus.FOUND)
+  @Get('/:id')
+  @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string) {
     return await this.postService.findOne(+id);
   }
@@ -58,7 +57,7 @@ export class PostController {
   @Get('findByTitle/:title')
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   async findByTitle(
     @Param('title') title: string,
     @Query('page') page = '1',
@@ -71,7 +70,7 @@ export class PostController {
   }
 
   @Get('findByCategory/:category')
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findByCategory(
@@ -84,13 +83,13 @@ export class PostController {
     return await this.postService.findByCategory(category, pageNumber, limitNumber);
   }
 
-  @Put(':id')
+  @Put('/:id')
   @HttpCode(HttpStatus.OK)
   async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
     return await this.postService.update(+id, updatePostDto);
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     return await this.postService.remove(+id);

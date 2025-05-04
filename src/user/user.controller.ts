@@ -41,7 +41,7 @@ export class UserController {
     return await this.userService.remove(+req.user.sub);
   }
 
-  @Post("login")
+  @Post("/login")
   @HttpCode(HttpStatus.OK)
   async login(@Body() user: LoginUserDTO){
     return await this.userService.LoginAsync(user);

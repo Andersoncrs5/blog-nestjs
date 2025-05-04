@@ -19,13 +19,13 @@ export class CategoryController {
   }
 
   @Get()
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   async findAll() {
     return await this.categoryService.findAll();
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string) {
     return await this.categoryService.findOne(+id);
   }

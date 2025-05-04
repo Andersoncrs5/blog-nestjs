@@ -14,7 +14,7 @@ export class PostService {
     private readonly repository: Repository<Post>,
     private readonly userService: UserService,
   ){}
-  async create(id: number,createPostDto: CreatePostDto): Promise<Post> {
+  async create(id: number,createPostDto: CreatePostDto) {
     const queryRunner = this.repository.manager.connection.createQueryRunner();
     await queryRunner.startTransaction();
     
@@ -27,7 +27,7 @@ export class PostService {
 
       const postCreated: Post = await queryRunner.manager.save(post);
       await queryRunner.commitTransaction();
-      return postCreated;
+      return 'Post created with success';
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException(error);
