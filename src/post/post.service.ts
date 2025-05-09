@@ -65,7 +65,7 @@ export class PostService {
     })
 
     return {
-      data: products,
+      result: products,
       totalItems: count,
       currentPage: page,
       totalPages: Math.ceil(count / limit),
@@ -98,7 +98,7 @@ export class PostService {
       const postUpdated: Post | null = await queryRunner.manager.findOne(Post, { where: { id } })
       await queryRunner.commitTransaction();
 
-      return postUpdated;
+      return 'Post updated with success!';
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException(error);
