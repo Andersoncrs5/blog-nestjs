@@ -8,6 +8,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { UserService } from 'src/user/user.service';
 import { PostService } from 'src/post/post.service';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
 
 @Injectable()
 export class CommentService {
@@ -18,27 +19,14 @@ export class CommentService {
     private readonly postService : PostService,
   ){}
 
+  @Transactional()
   async create(postId: number, userId: number, createCommentDto: CreateCommentDto) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
     const user: User = await this.userService.findOne(userId);
     const post: Post = await this.postService.findOne(postId);
 
     const commentCreated = { ...createCommentDto, post, user, nameUser: user.name };
-
-    try {
-      
-      const comment = queryRunner.manager.create(Comment, commentCreated);
-      await queryRunner.manager.save(comment);
-      await queryRunner.commitTransaction();
-      return comment;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('Error creating comment', error.message);
-    } finally {
-      await queryRunner.release();
-    }
+    const comment = this.repository.create(commentCreated);
+    return this.repository.save(comment);
   }
 
   async findAllOfPost(id: number, page: number, limit: number) {
@@ -91,78 +79,45 @@ export class CommentService {
     return comment;
   }
 
+  @Transactional()
   async update(id: number, updateCommentDto: UpdateCommentDto): Promise<Comment> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-
     const comment: Comment = await this.findOne(id);
 
     const updatedComment = { ...comment, ...updateCommentDto };
-    updatedComment.isEdited = true
+    updatedComment.isEdited = true;
 
-    try {
-      await queryRunner.manager.save(Comment, updatedComment);
-      await queryRunner.commitTransaction();
-      return updatedComment;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('Error updating comment', error.message);
-    } finally {
-      await queryRunner.release();
-    }
+    await this.repository.save(updatedComment);
+    return updatedComment;
   }
 
+  @Transactional()
   async remove(id: number) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
-    try {
-      const comment: Comment = await this.findOne(id);
+    const comment: Comment = await this.findOne(id);
 
-      const commentReplies: Comment[] = await queryRunner.manager.find(Comment, { where: { parentId: id } });
+    const commentReplies: Comment[] = await this.repository.find({ where: { parentId: id } });
 
-      for (const reply of commentReplies) {
-        await queryRunner.manager.delete(Comment, reply.id);
-      }
-
-      await queryRunner.manager.delete(Comment, id);
-      await queryRunner.commitTransaction();
-
-      return `Comment deleted with ID: ${id}`;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('Error deleting comment', error.message);
-    } finally {
-      await queryRunner.release();
+    for (const reply of commentReplies) {
+      await this.repository.delete(reply.id);
     }
+
+    await this.repository.delete(id);
+    return `Comment deleted with ID: ${id}`;
   }
 
+  @Transactional()
   async createOnComment(idComment: number, idUser: number, createCommentDto: CreateCommentDto) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
-    try {
-      const comment: Comment = await this.findOne(idComment);
-      const user: User = await this.userService.findOne(idUser);
+    const comment: Comment = await this.findOne(idComment);
+    const user: User = await this.userService.findOne(idUser);
 
-      const commentCreated = queryRunner.manager.create(Comment, {
-        ...createCommentDto,
-        user,
-        parentId: comment.id,
-        post: comment.post,
-        nameUser: user.name,
-      });
+    const commentCreated = this.repository.create({
+      ...createCommentDto,
+      user,
+      parentId: comment.id,
+      post: comment.post,
+      nameUser: user.name,
+    });
 
-      await queryRunner.manager.save(commentCreated);
-      await queryRunner.commitTransaction();
-      
-      return commentCreated;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    return this.repository.save(commentCreated);
   }
 
   async findAllOfComment(id: number, page: number, limit: number) {

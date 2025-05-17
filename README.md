@@ -31,10 +31,6 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
 - Like/unlike posts.
 - Favorite posts.
 
-### Search and Filtering
-
-- Search posts by title and category.
-
 ## Technologies & Architecture
 
 - **Backend Framework:** NestJS (using Fastify for performance optimization).
@@ -67,21 +63,11 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
    npm run start:dev
    ```
 
-## API Documentation
-
-Swagger documentation is available at:
-
-```
-http://localhost:3000/api
-```
-
-## Contributing
-
-Feel free to fork this project and submit pull requests with improvements or bug fixes.
-
 ## novelties
 
-- system adm
+- Exceptions globals 
+- Otimizations
+- Filter
 
 ## next features
 

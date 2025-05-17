@@ -7,6 +7,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { UserService } from 'src/user/user.service';
 import { PostService } from 'src/post/post.service';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
 
 @Injectable()
 export class LikeService {
@@ -17,31 +18,24 @@ export class LikeService {
     private readonly postService : PostService,
   ) {}
 
+  @Transactional()
   async create(createLikeDto: CreateLikeDto): Promise<Like> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-
     const user = await this.userService.findOne(createLikeDto.userId);
     const post = await this.postService.findOne(createLikeDto.postId);
 
     const existingLike = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
     if (existingLike) throw new BadRequestException('This post is already liked');
 
-    try {
-      const like = queryRunner.manager.create(Like, { user, post });
-      const created = await queryRunner.manager.save(like);
-      await queryRunner.commitTransaction();
-      return created;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    const data = { user, post }
+
+    const created = this.repository.create(data);
+    const save = this.repository.save(created);
+
+    return save;
   }
 
   async findAllOfUser(id: number, page: number, limit: number){
-    const user = await this.userService.findOne(id);
+    await this.userService.findOne(id);
 
     const [likes, count] = await this.repository.findAndCount({
       skip: (page - 1) * limit,
@@ -70,23 +64,12 @@ export class LikeService {
     return count > 0;
   }
 
+  @Transactional()
   async remove(id: number): Promise<string> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-
-    try {
       const like = await this.findOne(id);
-
-      await queryRunner.manager.delete(Like, id);
-      await queryRunner.commitTransaction();
+      this.repository.delete(like);
 
       return `Like removed with id: ${id}`;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
   }
 
   async CountLikeByPost(id: number): Promise<number> {

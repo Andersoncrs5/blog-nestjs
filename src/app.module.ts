@@ -13,15 +13,17 @@ import { User } from './user/entities/user.entity';
 import { Post } from './post/entities/post.entity';
 import { Like } from './like/entities/like.entity';
 import { FavoritePost } from './favorite_post/entities/favorite_post.entity';
-import { Comment } from "src/comment/entities/comment.entity";
+import { Comment } from 'src/comment/entities/comment.entity';
 import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
 import { AdmModule } from './adm/adm.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional-cls-hooked';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), 
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -29,9 +31,9 @@ import { NotificationsModule } from './notifications/notifications.module';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || '',
       database: process.env.DB_NAME || 'blog',
-      entities: [User, Post, Like, FavoritePost, Comment, Category], 
-      autoLoadEntities: true, 
-      synchronize: true, 
+      entities: [User, Post, Like, FavoritePost, Comment, Category],
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     UserModule,
     CommentModule,
@@ -42,9 +44,13 @@ import { NotificationsModule } from './notifications/notifications.module';
     AuthModule,
     AdmModule,
     NotificationsModule,
-    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor() {
+    initializeTransactionalContext();
+    patchTypeORMRepositoryWithBaseRepository();
+  }
+}

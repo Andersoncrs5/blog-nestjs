@@ -7,6 +7,7 @@ import { join } from 'path';
 import fastifyStatic from '@fastify/static';
 import cors from '@fastify/cors'; 
 import { RawServerDefault } from 'fastify';
+import { AllExceptionsFilter } from './utils/all-exceptions.filter';
 
 async function bootstrap(): Promise<void> {
   const app: NestFastifyApplication<RawServerDefault> = await NestFactory.create<NestFastifyApplication>(
@@ -19,6 +20,8 @@ async function bootstrap(): Promise<void> {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
+
+  app.useGlobalFilters(new AllExceptionsFilter()); 
 
   const config: Omit<OpenAPIObject, "paths"> = new DocumentBuilder()
     .setTitle('Blog simples em NestJS')

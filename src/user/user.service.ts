@@ -7,6 +7,7 @@ import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from 'CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { AuthService } from 'src/auth/auth.service';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
 
 @Injectable()
 export class UserService {
@@ -16,124 +17,70 @@ export class UserService {
     private readonly authService: AuthService,
   ) {}
 
+  @Transactional()
   async create(createUserDto: CreateUserDto) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
-    try {
-      const user: User = queryRunner.manager.create(User, createUserDto);
-      const userSave: User = await queryRunner.manager.save(user);
-      await queryRunner.commitTransaction();
+    const user: User = this.repository.create(createUserDto);
+    const userSave: User = await this.repository.save(user);
 
-      return this.authService.token(userSave);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(error);
-    } finally {
-      await queryRunner.release();
-    }
+    return this.authService.token(userSave);
   }
-
+  
   async findOne(id: number): Promise<User> {
-    try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const user: User | null = await this.repository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      
-      return user;
-    } catch (error) {
-      throw new InternalServerErrorException(error);
+    if (!id || isNaN(id) || id <= 0) {
+      throw new BadRequestException('ID must be a positive number');
     }
-  }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
+    const user: User | null = await this.repository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     
-    try {
-      const user: User = await this.findOne(id);
-
-      if (updateUserDto.password) {
-        updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
-      }
-
-      await queryRunner.manager.update(User, id, updateUserDto);
-      await queryRunner.commitTransaction();
-
-      return await queryRunner.manager.findOne(User, { where: { id } });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    return user;
   }
 
+  @Transactional()
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user: User = await this.findOne(id); 
+
+    if (updateUserDto.password) {
+      updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
+    }
+
+    await this.repository.update(id, updateUserDto);
+
+    return await this.findOne(id); 
+  }
+
+  @Transactional()
   async remove(id: number): Promise<string> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
-    try {
-      await this.findOne(id);
-      await queryRunner.manager.delete(User, id);
-      await queryRunner.commitTransaction();
-
+      await this.findOne(id); 
+      await this.repository.delete(id); 
+  
       return 'User deleted with id';
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
   }
-
+  
   async LoginAsync(userDto: LoginUserDTO) {
-    try {
-      const email = userDto.email.trim();
-      const foundUser = await this.repository.findOne({ where: { email } });
+    const email = userDto.email.trim();
+    const foundUser = await this.repository.findOne({ where: { email } });
   
-      if (!foundUser) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-  
-      if (foundUser.isBlocked == true) {
-        throw new UnauthorizedException('You are blocked!!!');
-      }
-
-      const isPasswordCorrect = await CryptoService.compare(userDto.password, foundUser.password);
-  
-      if (!isPasswordCorrect) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      const accessToken = this.authService.token(foundUser);
-
-      return accessToken;
-    } catch (error) {
-      throw error;
+    if (!foundUser || !(await CryptoService.compare(userDto.password, foundUser.password))) {
+      throw new UnauthorizedException('Invalid credentials');
     }
-  } 
-
+  
+    if (foundUser.isBlocked) {
+      throw new UnauthorizedException('You are blocked!!!');
+    }
+  
+    return this.authService.token(foundUser);
+  }
+  
   async refreshToken(refreshToken: string) {
-    try {
-      return this.authService.refreshToken(refreshToken)
-    } catch (error) {
-      throw error;
-    }
+    return this.authService.refreshToken(refreshToken)
   }
 
   async logout(userId: number) {
-    try {
-      return this.authService.logout(userId);
-    } catch (error) {
-      throw new InternalServerErrorException('Error logging out');
-    }
+    return this.authService.logout(userId);
   }  
 
 }

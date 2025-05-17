@@ -6,6 +6,10 @@ import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { PaginationDto } from 'src/utils/pagination.util';
+import { FilterPostDto } from './dto/filterPost.dto';
 
 @Injectable()
 export class PostService {
@@ -14,26 +18,17 @@ export class PostService {
     private readonly repository: Repository<Post>,
     private readonly userService: UserService,
   ){}
+
+  @Transactional()
   async create(id: number,createPostDto: CreatePostDto) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    
     const user: User = await this.userService.findOne(id);
 
     const postData = {...createPostDto, user}
 
-    try {
-      const post: Post = await queryRunner.manager.create(Post, postData);
+    const post = this.repository.create(postData);
+    const save = this.repository.save(post);
 
-      const postCreated: Post = await queryRunner.manager.save(post);
-      await queryRunner.commitTransaction();
-      return 'Post created with success';
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(error);
-    } finally {
-      await queryRunner.release();
-    }
+    return 'Post created with success';
   }
 
   async findAll(page: number, limit: number){  
@@ -87,43 +82,22 @@ export class PostService {
     
   }
 
+  @Transactional()
   async update(id: number, updatePostDto: UpdatePostDto) {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
     const postExists: Post = await this.findOne(id);
 
-    try {
-      await queryRunner.manager.update(Post, id, updatePostDto);
+    await this.repository.update(id, updatePostDto);
+    const postUpdated: Post | null = await this.repository.findOne({ where: { id } });
 
-      const postUpdated: Post | null = await queryRunner.manager.findOne(Post, { where: { id } })
-      await queryRunner.commitTransaction();
-
-      return 'Post updated with success!';
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(error);
-    } finally {
-      await queryRunner.release();
-    }
+    return 'Post updated with success!';
   }
 
+  @Transactional()
   async remove(id: number): Promise<string> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
+    const postExists: Post = await this.findOne(id);
+    await this.repository.delete(postExists);
 
-    const post: Post = await this.findOne(id);
-
-    try {
-    
-      await queryRunner.manager.delete(Post, id);
-      await queryRunner.commitTransaction();
-      return 'Post deleted';
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(error);
-    } finally {
-      await queryRunner.release();
-    }
+    return 'Post deleted';
   }
 
   async findByTitle(title: string, page: number, limit: number){  
@@ -143,24 +117,63 @@ export class PostService {
   }
 
   async findByCategory(category: string, page: number, limit: number){  
-    try {
-      const [products, count] = await this.repository.findAndCount({
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { id: 'ASC' },
-        where: { category }
-      })
-      
+    const [products, count] = await this.repository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { id: 'ASC' },
+      where: { category }
+    })
 
-      return {
-        data: products,
-        totalItems: count,
-        currentPage: page,
-        totalPages: Math.ceil(count / limit),
-      };
-    } catch (e) {
-      throw new InternalServerErrorException(e);
+    return {
+      data: products,
+      totalItems: count,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+    };
+  }
+
+  async filter(
+    filter: FilterPostDto,
+    pagination: PaginationDto,
+  ): Promise<Pagination<Post>> {
+    const { title, category, authorName, createdAt } = filter;
+  
+    const queryBuilder = this.repository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.category', 'category')
+      .leftJoinAndSelect('post.author', 'author');
+  
+    if (title) {
+      queryBuilder.andWhere('LOWER(post.title) LIKE LOWER(:title)', {
+        title: `%${title}%`,
+      });
     }
+  
+    if (category) {
+      queryBuilder.andWhere('LOWER(category.name) = LOWER(:category)', {
+        category,
+      });
+    }
+  
+    if (authorName) {
+      queryBuilder.andWhere('LOWER(author.name) LIKE LOWER(:authorName)', {
+        authorName: `%${authorName}%`,
+      });
+    }
+  
+    if (createdAt) {
+      queryBuilder.andWhere('DATE(post.createdAt) = :createdAt', {
+        createdAt: createdAt.toISOString().split('T')[0],
+      });
+    }
+  
+    const options: IPaginationOptions = {
+      page: pagination.page,
+      limit: pagination.limit,
+      route: '/posts', 
+    };
+  
+    return paginate<Post>(queryBuilder, options);
   }
 
 }

@@ -4,6 +4,8 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { FilterPostDto } from './dto/filterPost.dto';
+import { PaginationDto } from 'src/utils/pagination.util';
 
 @Controller('post')
 export class PostController {
@@ -94,4 +96,13 @@ export class PostController {
   async remove(@Param('id') id: string) {
     return await this.postService.remove(+id);
   }
+
+  @Get('filter')
+  async filter(
+    @Query() filter: FilterPostDto,
+    @Query() pagination: PaginationDto
+  ) {
+    return this.postService.filter(filter, pagination);
+  }
+
 }

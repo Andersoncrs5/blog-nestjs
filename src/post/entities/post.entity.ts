@@ -6,7 +6,6 @@ import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGenerate
 
 @Entity()
 export class Post {
-    
     @PrimaryGeneratedColumn()
     id:number
 

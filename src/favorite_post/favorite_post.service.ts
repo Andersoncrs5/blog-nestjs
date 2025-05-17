@@ -7,6 +7,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { UserService } from 'src/user/user.service';
 import { PostService } from 'src/post/post.service';
+import { Transactional } from 'typeorm-transactional-cls-hooked';
 
 @Injectable()
 export class FavoritePostService {
@@ -17,28 +18,18 @@ export class FavoritePostService {
     private readonly postService : PostService,
   ) {}
 
+  @Transactional()
   async create(createFavoritePostDto: CreateFavoritePostDto): Promise<FavoritePost> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-
     const user = await this.userService.findOne(createFavoritePostDto.userId);
     const post = await this.postService.findOne(createFavoritePostDto.postId);
 
     const existingFavorite = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
     if (existingFavorite) throw new BadRequestException('This post is already in favorites');
 
-    try {
-      const favoritePostCreate = queryRunner.manager.create(FavoritePost, { user, post });
+    const data = { user, post }
 
-      const created = await queryRunner.manager.save(favoritePostCreate);
-      await queryRunner.commitTransaction();
-      return created;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    const created = await this.repository.create(data);
+    return await this.repository.save(created);
   }
 
   async findAllOfUser(id: number, page: number, limit: number) {
@@ -68,24 +59,16 @@ export class FavoritePostService {
     return count > 0;
   }
 
+  @Transactional()
   async remove(id: number): Promise<string> {
     const queryRunner = this.repository.manager.connection.createQueryRunner();
     await queryRunner.startTransaction();
 
-    const favoritePost = await queryRunner.manager.findOne(FavoritePost, { where: { id } });
-      if (!favoritePost) throw new NotFoundException(`Favorite post not found with id: ${id}`);
+    const favoritePost = await this.repository.findOne({ where: { id } });
+    if (!favoritePost) throw new NotFoundException(`Favorite post not found with id: ${id}`);
 
-    try {
+    await this.repository.delete(favoritePost);
 
-      await queryRunner.manager.delete(FavoritePost, id);
-      await queryRunner.commitTransaction();
-
-      return `Favorite post deleted with id: ${id}`;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    return `Favorite post deleted with id: ${id}`;
   }
 }
