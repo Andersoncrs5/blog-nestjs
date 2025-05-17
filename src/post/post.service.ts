@@ -6,7 +6,7 @@ import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
-import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from 'src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';

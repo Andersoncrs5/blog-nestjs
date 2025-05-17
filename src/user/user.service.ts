@@ -7,7 +7,7 @@ import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from 'CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { AuthService } from 'src/auth/auth.service';
-import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class UserService {

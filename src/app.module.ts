@@ -18,22 +18,33 @@ import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
 import { AdmModule } from './adm/adm.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { Transactional } from 'typeorm-transactional-cls-hooked';
-import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional-cls-hooked';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT) || 5432,
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || '',
-      database: process.env.DB_NAME || 'blog',
-      entities: [User, Post, Like, FavoritePost, Comment, Category],
-      autoLoadEntities: true,
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      useFactory() {
+        return {
+          type: 'postgres',
+          host: process.env.DB_HOST || 'localhost',
+          port: Number(process.env.DB_PORT) || 5432,
+          username: process.env.DB_USER || 'postgres',
+          password: process.env.DB_PASS || '',
+          database: process.env.DB_NAME || 'blog',
+          entities: [User, Post, Like, FavoritePost, Comment, Category],
+          autoLoadEntities: true,
+          synchronize: true,
+        };
+      },
+      async dataSourceFactory(options) {
+        if (!options) {
+          throw new Error('Invalid options passed');
+        }
+
+        return addTransactionalDataSource(new DataSource(options));
+      },
     }),
     UserModule,
     CommentModule,
@@ -48,9 +59,4 @@ import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepositor
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-  constructor() {
-    initializeTransactionalContext();
-    patchTypeORMRepositoryWithBaseRepository();
-  }
-}
+export class AppModule {}

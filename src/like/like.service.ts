@@ -7,7 +7,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { UserService } from 'src/user/user.service';
 import { PostService } from 'src/post/post.service';
-import { Transactional } from 'typeorm-transactional-cls-hooked';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class LikeService {

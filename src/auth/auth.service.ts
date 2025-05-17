@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly repository: Repository<User>
   ){}
 
+  @Transactional()
   async token(user: User){
     if (!user) {
       throw new NotFoundException('User is required');
@@ -34,6 +36,7 @@ export class AuthService {
     return { access_token: accessToken, refresh_token: refreshToken };
   }
 
+  @Transactional()
   async logout(userId: number) {
     const user = await this.repository.findOne({ where: { id: userId } });
 
@@ -47,31 +50,27 @@ export class AuthService {
     return { message: 'Logout realizado com sucesso' };
   }
 
+  @Transactional()
   async refreshToken(refreshToken: string) {
-    try {
-      const payload = this.jwtService.verify(refreshToken);
-  
-      const foundUser = await this.repository.findOne({
-        where: { id: payload.sub, refreshToken },
-      });
-  
-      if (!foundUser) {
-        throw new UnauthorizedException('Refresh token inválido');
-      }
-  
-      const newAccessToken = this.jwtService.sign(
-        { 
-          sub: foundUser.id, 
-          email: foundUser.email, 
-          isAdm: foundUser.isAdm, 
-          isBlocked: foundUser.isBlocked 
-        }
-      );
-  
-      return { access_token: newAccessToken };
-    } catch (error) {
-      throw new UnauthorizedException('Refresh token inválido ou expirado');
-    }
-  }
+    const payload = this.jwtService.verify(refreshToken);
 
+    const foundUser = await this.repository.findOne({
+      where: { id: payload.sub, refreshToken },
+    });
+
+    if (!foundUser) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    const newAccessToken = this.jwtService.sign(
+      { 
+        sub: foundUser.id, 
+        email: foundUser.email, 
+        isAdm: foundUser.isAdm, 
+        isBlocked: foundUser.isBlocked 
+      }
+    );
+
+    return { access_token: newAccessToken };
+  }
 }

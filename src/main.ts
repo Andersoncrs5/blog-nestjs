@@ -8,8 +8,11 @@ import fastifyStatic from '@fastify/static';
 import cors from '@fastify/cors'; 
 import { RawServerDefault } from 'fastify';
 import { AllExceptionsFilter } from './utils/all-exceptions.filter';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 
 async function bootstrap(): Promise<void> {
+  initializeTransactionalContext()
+  
   const app: NestFastifyApplication<RawServerDefault> = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
