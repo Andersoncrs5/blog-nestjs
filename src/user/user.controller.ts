@@ -4,8 +4,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { RefreshTokenDTO } from 'src/auth/dtos/refresh-token.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RefreshTokenDTO } from '../../src/auth/dtos/refresh-token.dto';
+import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 
 @Controller('user')
 export class UserController {

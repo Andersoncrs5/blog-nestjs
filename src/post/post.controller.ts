@@ -5,11 +5,12 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FilterPostDto } from './dto/filterPost.dto';
-import { PaginationDto } from 'src/utils/pagination.util';
+import { PaginationDto } from '../../src/utils/pagination.util';
+import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
 
 @Controller('post')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly postService: PostService, private readonly postMetricsService: PostMetricsService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -53,6 +54,7 @@ export class PostController {
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string) {
+    await this.postMetricsService.sameViewed(+id);
     return await this.postService.findOne(+id);
   }
 

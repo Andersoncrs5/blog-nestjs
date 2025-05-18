@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/post.entity';
@@ -8,15 +8,26 @@ import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
-import { PaginationDto } from 'src/utils/pagination.util';
+import { PaginationDto } from '../../src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';
+import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
+import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
+import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(Post)
     private readonly repository: Repository<Post>,
+
+    @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+
+    @Inject(forwardRef(() => UserMetricsService))
+    private readonly userMetricService: UserMetricsService,
+
+    @Inject(forwardRef(() => PostMetricsService))
+    private readonly postMetricService: PostMetricsService
   ){}
 
   @Transactional()
@@ -25,8 +36,14 @@ export class PostService {
 
     const postData = {...createPostDto, user}
 
-    const post = this.repository.create(postData);
-    const save = this.repository.save(post);
+    const post = await this.repository.create(postData);
+    const save = await this.repository.save(post);
+
+    await this.postMetricService.create(save);
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(id);
+    userMetric.postsCount += 1;
+    await this.userMetricService.update(userMetric);
 
     return 'Post created with success';
   }
@@ -79,15 +96,19 @@ export class PostService {
     }
 
     return post;
-    
   }
 
   @Transactional()
   async update(id: number, updatePostDto: UpdatePostDto) {
     const postExists: Post = await this.findOne(id);
 
-    await this.repository.update(id, updatePostDto);
-    const postUpdated: Post | null = await this.repository.findOne({ where: { id } });
+    const data = { ...updatePostDto, version: postExists.version }
+
+    const metric = await this.postMetricService.findOne(id);
+    metric.editedCount += 1;
+    
+    await this.repository.update(id, data);
+    await this.postMetricService.update(metric);
 
     return 'Post updated with success!';
   }
@@ -96,6 +117,10 @@ export class PostService {
   async remove(id: number): Promise<string> {
     const postExists: Post = await this.findOne(id);
     await this.repository.delete(postExists);
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(postExists.user.id);
+    userMetric.postsCount -= 1;
+    await this.userMetricService.update(userMetric);
 
     return 'Post deleted';
   }

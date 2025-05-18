@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
-import { User } from 'src/user/entities/user.entity';
-import { UserService } from 'src/user/user.service';
+import { User } from '../../src/user/entities/user.entity';
+import { UserService } from '../../src/user/user.service';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
@@ -13,6 +13,8 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
+
+    @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
   ) {}
 
@@ -45,9 +47,11 @@ export class CategoryService {
 
   @Transactional()
   async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category | null> {
-    await this.findOne(id); 
+    const category = await this.findOne(id); 
 
-    await this.repository.update(id, updateCategoryDto);
+    const data = { ...updateCategoryDto, version: category.version }
+
+    await this.repository.update(id, data);
     return await this.repository.findOne({ where: { id } });
   }
 

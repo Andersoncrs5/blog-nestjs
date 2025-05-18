@@ -2,12 +2,13 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Http
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CommentMetricsService } from '../../src/comment_metrics/comment_metrics.service';
 
 @Controller('comment')
 export class CommentController {
-  constructor(private readonly service: CommentService) {}
+  constructor(private readonly service: CommentService, private readonly metricService: CommentMetricsService ) {}
 
   @Post(':idPost')
   @UseGuards(JwtAuthGuard)
@@ -64,6 +65,7 @@ export class CommentController {
   @Get(':id')
   @HttpCode(HttpStatus.FOUND)
   async findOne(@Param('id') id: string) {
+    await this.metricService.sumViewed(+id)
     return await this.service.findOne(+id);
   }
 

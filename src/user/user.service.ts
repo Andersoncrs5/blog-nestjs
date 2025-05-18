@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,8 +6,9 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from 'CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
-import { AuthService } from 'src/auth/auth.service';
+import { AuthService } from '../../src/auth/auth.service';
 import { Transactional } from 'typeorm-transactional';
+import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
 
 @Injectable()
 export class UserService {
@@ -15,12 +16,17 @@ export class UserService {
     @InjectRepository(User)
     private readonly repository: Repository<User>,
     private readonly authService: AuthService,
+
+    @Inject(forwardRef(() => UserMetricsService))
+    private readonly userMetrics: UserMetricsService
   ) {}
 
   @Transactional()
   async create(createUserDto: CreateUserDto) {
-    const user: User = this.repository.create(createUserDto);
+    const user: User = await this.repository.create(createUserDto);
     const userSave: User = await this.repository.save(user);
+
+    await this.userMetrics.create(userSave);
 
     return this.authService.token(userSave);
   }
@@ -47,7 +53,9 @@ export class UserService {
       updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
     }
 
-    await this.repository.update(id, updateUserDto);
+    const data = { ...updateUserDto, version: user.version }
+
+    await this.repository.update(id, data);
 
     return await this.findOne(id); 
   }

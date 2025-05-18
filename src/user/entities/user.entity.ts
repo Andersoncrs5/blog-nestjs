@@ -1,10 +1,11 @@
-import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { Post } from "src/post/entities/post.entity";
 import { Category } from "src/category/entities/category.entity";
 import { FavoritePost } from "src/favorite_post/entities/favorite_post.entity";
 import { Like } from "src/like/entities/like.entity";
 import { Comment } from "src/comment/entities/comment.entity";
+import { UserMetric } from "src/user_metrics/entities/user_metric.entity";
 
 @Entity()
 export class User {
@@ -36,6 +37,9 @@ export class User {
     @UpdateDateColumn()
     updatedAt: Date
 
+    @VersionColumn()
+    version: number;
+
     @OneToMany(() => Post, (post) => post.user)
     posts: Post[]
 
@@ -45,12 +49,15 @@ export class User {
     @OneToMany(() => Comment, (comment) => comment.user)
     comments: Comment[]; 
 
-
     @OneToMany(() => FavoritePost, (favoritePost) => favoritePost.user)
     favoritePosts: FavoritePost[];
 
     @OneToMany(() => Like, (like) => like.user)
     likes: Like[];
+
+    @OneToOne(() => UserMetric, metric => metric.user, { cascade: true, eager: true } )
+    @JoinColumn()
+    metric: UserMetric;
 
     @BeforeInsert()
     async hashPassword() {

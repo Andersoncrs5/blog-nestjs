@@ -1,5 +1,5 @@
-import { User } from "src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { User } from "../../../src/user/entities/user.entity";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 
 @Entity()
 export class Category {
@@ -15,6 +15,9 @@ export class Category {
 
     @Column({ default: false })
     isActived: boolean;
+
+    @VersionColumn()
+    version: number;
 
     @ManyToOne(() => User, (user) => user.categories, { onDelete : 'CASCADE' } )
     user: User

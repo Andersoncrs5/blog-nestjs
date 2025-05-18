@@ -1,6 +1,7 @@
-import { User } from 'src/user/entities/user.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../../src/user/entities/user.entity';
+import { Post } from '../../../src/post/entities/post.entity';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { LikeOrDislike } from './likeOrDislike.enum';
 
 @Entity('like')
 export class Like {
@@ -13,6 +14,9 @@ export class Like {
 
   @ManyToOne(() => Post, (post) => post.likes, { onDelete: 'CASCADE' })
   post: Post; 
+
+  @Column({type: 'enum',enum: LikeOrDislike})
+  action: LikeOrDislike;
 
   @CreateDateColumn()
   createdAt: Date;

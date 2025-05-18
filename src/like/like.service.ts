@@ -1,37 +1,98 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { Repository } from 'typeorm';
 import { Like } from './entities/like.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { UserService } from 'src/user/user.service';
-import { PostService } from 'src/post/post.service';
+import { User } from '../../src/user/entities/user.entity';
+import { Post } from '../../src/post/entities/post.entity';
+import { UserService } from '../../src/user/user.service';
+import { PostService } from '../../src/post/post.service';
 import { Transactional } from 'typeorm-transactional';
+import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
+import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
+import { LikeOrDislike } from './entities/likeOrDislike.enum';
+import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
+import { PostMetric } from '../../src/post_metrics/entities/post_metric.entity';
 
 @Injectable()
 export class LikeService {
   constructor(
     @InjectRepository(Like)
     private readonly repository: Repository<Like>,
+    
+    @Inject(forwardRef(() => UserService))
     private readonly userService : UserService,
+
+    @Inject(forwardRef(() => PostService))
     private readonly postService : PostService,
+
+    @Inject(forwardRef(() => UserMetricsService))
+    private readonly userMetricsService: UserMetricsService,
+
+    @Inject(forwardRef(() => PostMetricsService))
+    private readonly postMetricsService: PostMetricsService
   ) {}
 
   @Transactional()
-  async create(createLikeDto: CreateLikeDto): Promise<Like> {
+  async create(createLikeDto: CreateLikeDto, action: LikeOrDislike): Promise<Like | null> {
     const user = await this.userService.findOne(createLikeDto.userId);
     const post = await this.postService.findOne(createLikeDto.postId);
+    const userMetric = await this.userMetricsService.findOne(user.id);
+    const postMetric = await this.postMetricsService.findOne(post.id);
 
-    const existingLike = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
-    if (existingLike) throw new BadRequestException('This post is already liked');
+    const existingLike = await this.repository.findOne({
+      where: { user: { id: user.id }, post: { id: post.id } },
+    });
 
-    const data = { user, post }
+    if (existingLike && existingLike.action === action) {
+      await this.repository.remove(existingLike);
 
-    const created = this.repository.create(data);
-    const save = this.repository.save(created);
+      this.adjustMetrics(userMetric, action, -1);
+      await this.userMetricsService.update(userMetric);
+      return null;
+    }
 
-    return save;
+    if (existingLike) {
+      existingLike.action = action;
+      await this.repository.save(existingLike);
+
+      await this.adjustMetrics(userMetric, action, 1); 
+      await this.adjustMetrics(userMetric, await this.oppositeAction(action), -1);
+      await this.adjustPostMetrics(postMetric, action, 1); 
+      await this.adjustPostMetrics(postMetric, await this.oppositeAction(action), -1);
+      await this.userMetricsService.update(userMetric);
+      await this.postMetricsService.update(postMetric)
+      return existingLike;
+    }
+
+    const newLike = await this.repository.create({ user, post, action });
+    const saved = await this.repository.save(newLike);
+
+    await this.adjustMetrics(userMetric, action, 1);
+    await this.userMetricsService.update(userMetric);
+
+    return saved;
+  }
+
+  private async adjustMetrics(metric: UserMetric, action: LikeOrDislike, value: number) {
+    if (action === LikeOrDislike.LIKE) {
+      metric.likesGivenCountInPost += value;
+    } else {
+      metric.deslikesGivenCountInPost += value;
+    }
+  }
+
+  private async adjustPostMetrics(metric: PostMetric, action: LikeOrDislike, value: number) {
+    if (action === LikeOrDislike.LIKE) {
+      metric.likes += value;
+    } else {
+      metric.dislikes += value;
+    }
+  }
+
+
+  private async oppositeAction(action: LikeOrDislike): Promise<LikeOrDislike> {
+    return action === LikeOrDislike.LIKE ? LikeOrDislike.DISLIKE : LikeOrDislike.LIKE;
   }
 
   async findAllOfUser(id: number, page: number, limit: number){
@@ -66,16 +127,14 @@ export class LikeService {
 
   @Transactional()
   async remove(id: number): Promise<string> {
-      const like = await this.findOne(id);
-      this.repository.delete(like);
+    const like = await this.findOne(id);
+    this.repository.delete(like);
 
-      return `Like removed with id: ${id}`;
-  }
+    const userMetric: UserMetric = await this.userMetricsService.findOne(like.user.id);
+    userMetric.likesGivenCountInPost -= 1;
+    await this.userMetricsService.update(userMetric);
 
-  async CountLikeByPost(id: number): Promise<number> {
-    const postExists = await this.postService.findOne(id);
-
-    return await this.repository.count({ where: { post: { id } } });
+    return `Like removed with id: ${id}`;
   }
 
 }

@@ -1,22 +1,39 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { Comment } from './entities/comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { UserService } from 'src/user/user.service';
-import { PostService } from 'src/post/post.service';
+import { User } from '../../src/user/entities/user.entity';
+import { Post } from '../../src/post/entities/post.entity';
+import { UserService } from '../../src/user/user.service';
+import { PostService } from '../../src/post/post.service';
 import { Transactional } from 'typeorm-transactional';
+import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
+import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
+import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
+import { CommentMetricsService } from '../../src/comment_metrics/comment_metrics.service';
 
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
     private readonly repository: Repository<Comment>,
+
+    @Inject(forwardRef(() => UserService))
     private readonly userService : UserService,
+
+    @Inject(forwardRef(() => PostService))
     private readonly postService : PostService,
+
+    @Inject(forwardRef(() => UserMetricsService))
+    private readonly userMetricService : UserMetricsService,
+
+    @Inject(forwardRef(() => PostMetricsService))
+    private readonly postMetricService : PostMetricsService,
+
+    @Inject(forwardRef(() => CommentMetricsService))
+    private readonly commentMetricService : CommentMetricsService,
   ){}
 
   @Transactional()
@@ -26,7 +43,19 @@ export class CommentService {
 
     const commentCreated = { ...createCommentDto, post, user, nameUser: user.name };
     const comment = this.repository.create(commentCreated);
-    return this.repository.save(comment);
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(user.id);
+    userMetric.commentsCount += 1;
+    await this.userMetricService.update(userMetric);
+
+    const postMetric = await this.postMetricService.findOne(post.id);
+    postMetric.commentsCount += 1
+    await this.postMetricService.update(postMetric);
+
+    const commentSave = await this.repository.save(comment);
+    await this.commentMetricService.create(commentSave)
+    
+    return commentSave;
   }
 
   async findAllOfPost(id: number, page: number, limit: number) {
@@ -86,7 +115,12 @@ export class CommentService {
     const updatedComment = { ...comment, ...updateCommentDto };
     updatedComment.isEdited = true;
 
+    const metric = await this.commentMetricService.findOne(comment);
+    metric.editedTimes += 1;
+    await this.commentMetricService.update(metric);
+
     await this.repository.save(updatedComment);
+
     return updatedComment;
   }
 
@@ -99,6 +133,14 @@ export class CommentService {
     for (const reply of commentReplies) {
       await this.repository.delete(reply.id);
     }
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(comment.user.id);
+    userMetric.commentsCount -= 1;
+    await this.userMetricService.update(userMetric);
+
+    const postMetric = await this.postMetricService.findOne(comment.post.id);
+    postMetric.commentsCount -= 1
+    await this.postMetricService.update(postMetric);
 
     await this.repository.delete(id);
     return `Comment deleted with ID: ${id}`;
@@ -117,7 +159,19 @@ export class CommentService {
       nameUser: user.name,
     });
 
-    return this.repository.save(commentCreated);
+    const userMetric: UserMetric = await this.userMetricService.findOne(user.id);
+    userMetric.commentsCount += 1;
+    await this.userMetricService.update(userMetric);
+
+    const postMetric = await this.postMetricService.findOne(comment.post.id);
+    postMetric.commentsCount += 1
+    await this.postMetricService.update(postMetric);
+
+    
+    const commentSave = await this.repository.save(commentCreated);
+    await this.commentMetricService.create(commentSave)
+
+    return commentSave;
   }
 
   async findAllOfComment(id: number, page: number, limit: number) {

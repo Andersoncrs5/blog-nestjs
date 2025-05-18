@@ -1,19 +1,22 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CommentService } from 'src/comment/comment.service';
-import { Comment } from 'src/comment/entities/comment.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { PostService } from 'src/post/post.service';
-import { User } from 'src/user/entities/user.entity';
-import { UserService } from 'src/user/user.service';
+import { CommentService } from '../../src/comment/comment.service';
+import { Comment } from '../../src/comment/entities/comment.entity';
+import { Post } from '../../src/post/entities/post.entity';
+import { PostService } from '../../src/post/post.service';
+import { User } from '../../src/user/entities/user.entity';
+import { UserService } from '../../src/user/user.service';
 import { Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class AdmService {
   constructor(
+    @Inject(forwardRef(() => UserService)) 
     private readonly userService: UserService,
+    @Inject(forwardRef(() => PostService)) 
     private readonly postService: PostService,
+    @Inject(forwardRef(() => CommentService)) 
     private readonly commentService: CommentService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,

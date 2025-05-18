@@ -20,6 +20,9 @@ import { AdmModule } from './adm/adm.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
+import { UserMetricsModule } from './user_metrics/user_metrics.module';
+import { PostMetricsModule } from './post_metrics/post_metrics.module';
+import { CommentMetricsModule } from './comment_metrics/comment_metrics.module';
 
 @Module({
   imports: [
@@ -55,6 +58,9 @@ import { DataSource } from 'typeorm';
     AuthModule,
     AdmModule,
     NotificationsModule,
+    UserMetricsModule,
+    PostMetricsModule,
+    CommentMetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,21 +1,33 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateFavoritePostDto } from './dto/create-favorite_post.dto';
 import { Repository } from 'typeorm';
 import { FavoritePost } from './entities/favorite_post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { UserService } from 'src/user/user.service';
-import { PostService } from 'src/post/post.service';
+import { UserService } from '../../src/user/user.service';
+import { PostService } from '../../src/post/post.service';
 import { Transactional } from 'typeorm-transactional';
+import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
+import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
+import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
+import { PostMetric } from '../../src/post_metrics/entities/post_metric.entity';
 
 @Injectable()
 export class FavoritePostService {
   constructor(
     @InjectRepository(FavoritePost)
     private readonly repository: Repository<FavoritePost>,
+
+    @Inject(forwardRef(() => UserService))
     private readonly userService : UserService,
+
+    @Inject(forwardRef(() => PostService))
     private readonly postService : PostService,
+
+    @Inject(forwardRef(() => UserMetricsService))
+    private readonly userMetricService: UserMetricsService,
+
+    @Inject(forwardRef(() => PostMetricsService))
+    private readonly postMetricService: PostMetricsService
   ) {}
 
   @Transactional()
@@ -29,6 +41,15 @@ export class FavoritePostService {
     const data = { user, post }
 
     const created = await this.repository.create(data);
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(user.id);
+    userMetric.savedPostsCount += 1;
+    await this.userMetricService.update(userMetric);
+
+    const postMetric: PostMetric = await this.postMetricService.findOne(post.id);
+    postMetric.favoriteCount += 1;
+    await this.postMetricService.update(postMetric);
+
     return await this.repository.save(created);
   }
 
@@ -68,6 +89,14 @@ export class FavoritePostService {
     if (!favoritePost) throw new NotFoundException(`Favorite post not found with id: ${id}`);
 
     await this.repository.delete(favoritePost);
+
+    const userMetric: UserMetric = await this.userMetricService.findOne(favoritePost.user.id);
+    userMetric.savedPostsCount -= 1;
+    await this.userMetricService.update(userMetric);
+
+    const postMetric: PostMetric = await this.postMetricService.findOne(favoritePost.post.id);
+    postMetric.favoriteCount += 1;
+    await this.postMetricService.update(postMetric);
 
     return `Favorite post deleted with id: ${id}`;
   }
