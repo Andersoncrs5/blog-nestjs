@@ -3,12 +3,11 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { AuthModule } from '../../src/auth/auth.module';
-import { UserMetricsModule } from '../../src/user_metrics/user_metrics.module';
+import { UnitOfWorkModule } from 'src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule, 
-  forwardRef(() => UserMetricsModule)],
+  imports: [TypeOrmModule.forFeature([User]), 
+  forwardRef(() => UnitOfWorkModule)],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

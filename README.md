@@ -63,14 +63,10 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
    npm run start:dev
    ```
 
-## novelties
-
-- Exceptions globals 
-- Otimizations
-- Filter
-
 ## next features
 
-- table notifications
-- table flowers
-- recover password
+- otimizations
+- unitOfWork
+- nestjs-typeorm-paginate
+- fix bugs
+- favorite comment system

@@ -1,21 +1,37 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, HttpStatus, HttpCode, Query } from '@nestjs/common';
-import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { CommentMetricsService } from '../../src/comment_metrics/comment_metrics.service';
+import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { UserMetric } from 'src/user_metrics/entities/user_metric.entity';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { PostMetric } from 'src/post_metrics/entities/post_metric.entity';
+import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
+import { User } from 'src/user/entities/user.entity';
 
 @Controller('comment')
 export class CommentController {
-  constructor(private readonly service: CommentService, private readonly metricService: CommentMetricsService ) {}
+  constructor(private readonly unit:UnitOfWork) {}
 
-  @Post(':idPost')
+  @Post(':postId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Param('idPost') idPost: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
-    return await this.service.create(idPost, +req.user.id, createCommentDto);
+  async create(@Param('postId') postId: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
+    const post = await this.unit.postService.findOne(postId)
+    const user = await this.unit.userService.findOne(+req.user.id);
+
+    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.SUM);
+
+    const postMetric: PostMetric = await this.unit.postMetricsService.findOne(post);
+    await this.unit.postMetricsService.sumOrReduceCommentsCount(postMetric, ActionEnum.SUM);
+
+    const result = await this.unit.commentService.create(post, user, createCommentDto);
+    await this.unit.commentMetricsService.create(result);
+
+    return ResponseDto.of("Comment added!!!", result, "no");
   }
 
   @Get('findAllOfPost/:id')
@@ -29,7 +45,8 @@ export class CommentController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    return await this.service.findAllOfPost(id, pageNumber, limitNumber);
+    const post = await this.unit.postService.findOne(id)
+    return await this.unit.commentService.findAllOfPost(post, pageNumber, limitNumber);
   }
 
   @Get('/findAllofUser')
@@ -45,7 +62,8 @@ export class CommentController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    return this.service.findAllOfUser(+req.user.sub, pageNumber, limitNumber);
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    return this.unit.commentService.findAllOfUser(user, pageNumber, limitNumber);
   }
 
   @Get('/findAllOfComment/:id')
@@ -59,32 +77,69 @@ export class CommentController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    return await this.service.findAllOfComment(+id, pageNumber, limitNumber);
+
+    const comment = await this.unit.commentService.findOne(+id);
+
+    return await this.unit.commentService.findAllOfComment(comment, pageNumber, limitNumber);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.FOUND)
   async findOne(@Param('id') id: string) {
-    await this.metricService.sumViewed(+id)
-    return await this.service.findOne(+id);
+    
+    const comment = await this.unit.commentService.findOne(+id);
+    await this.unit.commentMetricsService.sumViewed(comment.metric);
+
+    return ResponseDto.of("Comment found!!!", comment, "no");
   }
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
-    return await this.service.update(+id, updateCommentDto);
+    const comment = await this.unit.commentService.findOne(+id);
+
+    const commentMetric = await this.unit.commentMetricsService.findOne(comment);
+    await this.unit.commentMetricsService.sumOrReduceEditedTimes(commentMetric, ActionEnum.SUM);
+    await this.unit.commentMetricsService.sumOrReduceEditedTimes(commentMetric, ActionEnum.SUM);
+
+    return await this.unit.commentService.update(comment, updateCommentDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
-    return await this.service.remove(+id);
+  async remove(@Req() Req, @Param('id') id: string) {
+    const comment = await this.unit.commentService.findOne(+id);
+
+    const user: User = await this.unit.userService.findOne(+Req.user.id);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.REDUCE);
+
+    const postMetric: PostMetric = await this.unit.postMetricsService.findOne(comment.post);
+    await this.unit.postMetricsService.sumOrReduceCommentsCount(postMetric, ActionEnum.REDUCE);
+
+    await this.unit.commentService.remove(comment);
+    return ResponseDto.of("Comment removed!!!", "no result", "no");
   }
 
   @Post('/createOnComment/:idComment/')
   @HttpCode(HttpStatus.CREATED)
   async createOnComment(@Param('idComment') idComment: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
-    return await this.service.createOnComment(idComment, +req.user.sub, createCommentDto);
+    const comment = await this.unit.commentService.findOne(idComment);
+    const commentMetric = await this.unit.commentMetricsService.findOne(comment);
+
+    const user: User = await this.unit.userService.findOne(+req.user.id);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.SUM);
+
+    const postMetric: PostMetric = await this.unit.postMetricsService.findOne(comment.post);
+    await this.unit.postMetricsService.sumOrReduceCommentsCount(postMetric, ActionEnum.SUM);
+
+    const result = await this.unit.commentService.createOnComment(comment, user, createCommentDto);
+    await this.unit.commentMetricsService.create(comment);
+
+    await this.unit.commentMetricsService.sumOrReduceRepliesCount(commentMetric, ActionEnum.SUM);
+
+    return ResponseDto.of("Comment added!!!", result, "no");
   }
 
 }

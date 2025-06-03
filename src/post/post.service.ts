@@ -1,87 +1,78 @@
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/post.entity';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
-import { UserService } from '../user/user.service';
 import { Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from '../../src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';
-import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
-import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
-import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(Post)
-    private readonly repository: Repository<Post>,
-
-    @Inject(forwardRef(() => UserService))
-    private readonly userService: UserService,
-
-    @Inject(forwardRef(() => UserMetricsService))
-    private readonly userMetricService: UserMetricsService,
-
-    @Inject(forwardRef(() => PostMetricsService))
-    private readonly postMetricService: PostMetricsService
+    private readonly repository: Repository<Post>
   ){}
 
   @Transactional()
-  async create(id: number,createPostDto: CreatePostDto) {
-    const user: User = await this.userService.findOne(id);
-
+  async create(user: User,createPostDto: CreatePostDto) {
     const postData = {...createPostDto, user}
 
-    const post = await this.repository.create(postData);
+    const post = this.repository.create(postData);
     const save = await this.repository.save(post);
 
-    await this.postMetricService.create(save);
-
-    const userMetric: UserMetric = await this.userMetricService.findOne(id);
-    userMetric.postsCount += 1;
-    await this.userMetricService.update(userMetric);
-
-    return 'Post created with success';
+    return save
   }
 
-  async findAll(page: number, limit: number){  
-    const [products, count] = await this.repository.
-      findAndCount({
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { id: 'ASC' },
-        where: { isActived: true }
-      });
-  
-      return {
-        data: products,
-        totalItems: count,
-        currentPage: page,
-        totalPages: Math.ceil(count / limit),
-      };
+  async findAll(page: number, limit: number): Promise<Pagination<Post>> {
+    const queryBuilder = this.repository.createQueryBuilder('post')
+      .where('post.isActived = :isActived', { isActived: true })
+      .orderBy('post.id', 'ASC');
 
+    return paginate(queryBuilder, {
+      page,
+      limit,
+      route: '/post',
+    });
   }
-  
-  async findAllOfUser(id: number, page: number, limit: number){  
-    const user: User = await this.userService.findOne(id);
 
-    const [products, count] = await this.repository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: 'ASC' },
-      where: { user: { id } }
-    })
+  async findAllOfUser(user: User, page: number, limit: number) {
+    const queryBuilder = this.repository.createQueryBuilder('post')
+      .where('post.userId = :userId', { userId: user.id })
+      .orderBy('post.id', 'ASC');
 
-    return {
-      result: products,
-      totalItems: count,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-    };
+    return paginate(queryBuilder, {
+      page,
+      limit,
+      route: '/post/findAllOfUser',
+    });
+  }
+
+  async findByCategory(category: string, page: number, limit: number){  
+    const queryBuilder = this.repository.createQueryBuilder('post')
+      .where('post.category = :category', { category: category })
+      .orderBy('post.id', 'ASC');
+
+    return paginate(queryBuilder, {
+      page,
+      limit,
+      route: '/post/findByCategory',
+    });
+  }
+
+  async findByTitle(title: string, page: number, limit: number) {
+    const queryBuilder = await this.repository.createQueryBuilder('post')
+    .where('post.title = %:title%', { title: title })
+    .orderBy('post.id', 'ASC');
+
+    return paginate(queryBuilder, {
+      page,
+      limit,
+      route: '/post/findByTitle',
+    });
   }
 
   async findOne(id: number): Promise<Post> {
@@ -99,62 +90,15 @@ export class PostService {
   }
 
   @Transactional()
-  async update(id: number, updatePostDto: UpdatePostDto) {
-    const postExists: Post = await this.findOne(id);
-
+  async update(postExists: Post, updatePostDto: UpdatePostDto) {
     const data = { ...updatePostDto, version: postExists.version }
-
-    const metric = await this.postMetricService.findOne(id);
-    metric.editedCount += 1;
     
-    await this.repository.update(id, data);
-    await this.postMetricService.update(metric);
-
-    return 'Post updated with success!';
+    return await this.repository.update(postExists.id, data);
   }
 
   @Transactional()
-  async remove(id: number): Promise<string> {
-    const postExists: Post = await this.findOne(id);
+  async remove(postExists: Post): Promise<void> {
     await this.repository.delete(postExists);
-
-    const userMetric: UserMetric = await this.userMetricService.findOne(postExists.user.id);
-    userMetric.postsCount -= 1;
-    await this.userMetricService.update(userMetric);
-
-    return 'Post deleted';
-  }
-
-  async findByTitle(title: string, page: number, limit: number){  
-    const [products, count] = await this.repository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: 'ASC' },
-      where: { title: Like(`%${title}%`) }
-    })
-
-    return {
-      data: products,
-      totalItems: count,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-    };
-  }
-
-  async findByCategory(category: string, page: number, limit: number){  
-    const [products, count] = await this.repository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: 'ASC' },
-      where: { category }
-    })
-
-    return {
-      data: products,
-      totalItems: count,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-    };
   }
 
   async filter(

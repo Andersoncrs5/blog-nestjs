@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { User } from '../../src/user/entities/user.entity';
-import { UserService } from '../../src/user/user.service';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
@@ -14,13 +13,10 @@ export class CategoryService {
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
 
-    @Inject(forwardRef(() => UserService))
-    private readonly userService: UserService,
   ) {}
 
   @Transactional()
-  async create(id: number, createCategoryDto: CreateCategoryDto) {
-    const user: User = await this.userService.findOne(id);
+  async create(user: User, createCategoryDto: CreateCategoryDto) {
     const categoryCreate = { ...createCategoryDto, user, nameUser: user.name };
 
     const category: Category = this.repository.create(categoryCreate);
@@ -46,29 +42,21 @@ export class CategoryService {
   }
 
   @Transactional()
-  async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<Category | null> {
-    const category = await this.findOne(id); 
-
+  async update(category: Category, updateCategoryDto: UpdateCategoryDto) {
     const data = { ...updateCategoryDto, version: category.version }
 
-    await this.repository.update(id, data);
-    return await this.repository.findOne({ where: { id } });
+    return await this.repository.update(category.id, data);
   }
 
   @Transactional()
-  async remove(id: number) {
-    await this.findOne(id); 
-
-    await this.repository.delete(id);
-    return 'Category deleted';
+  async remove(category: Category) {
+    await this.repository.delete(category.id);
   }
 
   @Transactional()
-  async ChangeStatusActive(id: number): Promise<Category> {
-    const category: Category = await this.findOne(id);
+  async ChangeStatusActive(category: Category) {
     category.isActived = !category.isActived;
 
-    await this.repository.update(id, category);
-    return category;
+    return await this.repository.update(category.id, category);
   }
 }

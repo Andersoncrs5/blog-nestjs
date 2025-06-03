@@ -1,40 +1,21 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateFavoritePostDto } from './dto/create-favorite_post.dto';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { FavoritePost } from './entities/favorite_post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserService } from '../../src/user/user.service';
-import { PostService } from '../../src/post/post.service';
 import { Transactional } from 'typeorm-transactional';
-import { UserMetricsService } from '../../src/user_metrics/user_metrics.service';
-import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
-import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
-import { PostMetric } from '../../src/post_metrics/entities/post_metric.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Post } from 'src/post/entities/post.entity';
+import { paginate } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class FavoritePostService {
   constructor(
     @InjectRepository(FavoritePost)
     private readonly repository: Repository<FavoritePost>,
-
-    @Inject(forwardRef(() => UserService))
-    private readonly userService : UserService,
-
-    @Inject(forwardRef(() => PostService))
-    private readonly postService : PostService,
-
-    @Inject(forwardRef(() => UserMetricsService))
-    private readonly userMetricService: UserMetricsService,
-
-    @Inject(forwardRef(() => PostMetricsService))
-    private readonly postMetricService: PostMetricsService
   ) {}
 
   @Transactional()
-  async create(createFavoritePostDto: CreateFavoritePostDto): Promise<FavoritePost> {
-    const user = await this.userService.findOne(createFavoritePostDto.userId);
-    const post = await this.postService.findOne(createFavoritePostDto.postId);
-
+  async create(user: User, post: Post, ): Promise<FavoritePost> {
     const existingFavorite = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
     if (existingFavorite) throw new BadRequestException('This post is already in favorites');
 
@@ -42,62 +23,34 @@ export class FavoritePostService {
 
     const created = await this.repository.create(data);
 
-    const userMetric: UserMetric = await this.userMetricService.findOne(user.id);
-    userMetric.savedPostsCount += 1;
-    await this.userMetricService.update(userMetric);
-
-    const postMetric: PostMetric = await this.postMetricService.findOne(post.id);
-    postMetric.favoriteCount += 1;
-    await this.postMetricService.update(postMetric);
-
     return await this.repository.save(created);
   }
 
-  async findAllOfUser(id: number, page: number, limit: number) {
-    const user = await this.userService.findOne(id);
+  async findAllOfUser(user: User, page: number, limit: number) {
+    const queryBuilder = this.repository
+      .createQueryBuilder('favorite_post')
+      .leftJoinAndSelect('favorite_post.post', 'post')
+      .where('favorite_post.userId = :userId', { userId: user.id })
+      .orderBy('favorite_post.id', 'ASC');
 
-    const [result, count] = await this.repository.findAndCount({ 
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: 'ASC' },
-      where: { user: { id } }, 
-      relations: ['post'] 
+    return paginate(queryBuilder, {
+      page,
+      limit,
+      route: '/like/findAllofUser',
     });
-
-    return {
-      data: result,
-      totalItems: count,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-    };
   }
 
-  async exists(idUser: number, idPost: number): Promise<boolean> {
-    const user = await this.userService.findOne(idUser);
-    const post = await this.postService.findOne(idPost);
 
-    const count = await this.repository.count({ where: { user: { id: idUser }, post: { id: idPost } } });
+  async exists(user: User, post: Post): Promise<boolean> {
+    const count = await this.repository.count({ where: { user, post } });
     return count > 0;
   }
 
   @Transactional()
-  async remove(id: number): Promise<string> {
-    const queryRunner = this.repository.manager.connection.createQueryRunner();
-    await queryRunner.startTransaction();
-
+  async remove(id: number): Promise<void> {
     const favoritePost = await this.repository.findOne({ where: { id } });
     if (!favoritePost) throw new NotFoundException(`Favorite post not found with id: ${id}`);
 
     await this.repository.delete(favoritePost);
-
-    const userMetric: UserMetric = await this.userMetricService.findOne(favoritePost.user.id);
-    userMetric.savedPostsCount -= 1;
-    await this.userMetricService.update(userMetric);
-
-    const postMetric: PostMetric = await this.postMetricService.findOne(favoritePost.post.id);
-    postMetric.favoriteCount += 1;
-    await this.postMetricService.update(postMetric);
-
-    return `Favorite post deleted with id: ${id}`;
   }
 }

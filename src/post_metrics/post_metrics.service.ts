@@ -1,35 +1,138 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Post } from '../../src/post/entities/post.entity';
 import { PostMetric } from './entities/post_metric.entity';
 import { Repository } from 'typeorm';
-import { PostService } from '../../src/post/post.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 
 @Injectable()
 export class PostMetricsService {
   constructor (
     @InjectRepository(PostMetric)
     private readonly repository: Repository<PostMetric>,
-
-    @Inject(forwardRef(() => PostService))
-    private readonly postService : PostService,
   ) {}
+
+  @Transactional()
+  async setLastInteractionAt(metric: PostMetric) {
+
+    metric.lastInteractionAt = new Date();
+    await this.update(metric);
+  }
+  
+  @Transactional()
+  async sumOrReduceViewed(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.viewed += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.viewed -= 1;
+    }
+
+    this.update(metric);
+  }
+  
+  @Transactional()
+  async sumOrReduceBookmarks(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.bookmarks += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.bookmarks -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceShares(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.shares += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.shares -= 1;
+    }
+
+    this.update(metric);
+  }
+  
+  @Transactional()
+  async sumOrReduceDislikes(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.dislikes += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.dislikes -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceLikes(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.likes += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.likes -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceCommentsCount(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.commentsCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.commentsCount -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceEditedCount(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.editedCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.editedCount -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceFavoriteCount(metric: PostMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.favoriteCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.favoriteCount -= 1;
+    }
+
+    this.update(metric);
+  }
 
   @Transactional()
   async create(post: Post) {
     const data = { post }
 
     const created = await this.repository.create(data)
-    const save = await this.repository.save(created);
+    await this.repository.save(created);
   }
 
-  async findOne(id: number) {
-    if (!id || isNaN(id) || id <= 0) {
-      throw new BadRequestException('ID must be a positive number');
-    }
-
-    const post: Post = await this.postService.findOne(id);
+  async findOne(post: Post) {
     const metric: PostMetric | null = await this.repository.findOne({ where : { post } })
 
     if (metric == null) {
@@ -41,7 +144,7 @@ export class PostMetricsService {
 
   @Transactional()
   async update(metric: PostMetric) {
-    const existingMetric = await this.findOne(metric.post.id)
+    const existingMetric = await this.findOne(metric.post)
 
     metric.lastInteractionAt = new Date();
     metric.version = existingMetric.version;
@@ -49,8 +152,7 @@ export class PostMetricsService {
     await this.repository.save(metric);
   }
 
-  async sameViewed(postId: number, amount: number = 1) {
-    const metric = await this.findOne(postId)
+  async sameViewed(metric: PostMetric, amount: number = 1) {
     metric.viewed += amount;
     await this.update(metric);
   }

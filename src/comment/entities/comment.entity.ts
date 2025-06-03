@@ -1,7 +1,8 @@
+import { FavoriteComment } from 'src/favorite_comment/entities/favorite_comment.entity';
 import { CommentMetric } from '../../../src/comment_metrics/entities/comment_metric.entity';
 import { Post } from '../../../src/post/entities/post.entity';
 import { User } from '../../../src/user/entities/user.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
 
 @Entity()
 export class Comment {
@@ -29,15 +30,18 @@ export class Comment {
   @VersionColumn()
   version: number;
 
-  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE', eager: true })
   user : User; 
 
-  @ManyToOne(() => Post, (post) => post.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Post, (post) => post.comments, { onDelete: 'CASCADE', eager: true })
   post: Post; 
 
   @OneToOne(() => CommentMetric, metric => metric.comment, { cascade: true, eager: true })
   @JoinColumn()
   metric: CommentMetric
+
+  @OneToMany(() => FavoriteComment, (favorite_comment) => favorite_comment.comment)
+  favoriteComments: FavoriteComment[];
 
   @CreateDateColumn()
   createdAt: Date;

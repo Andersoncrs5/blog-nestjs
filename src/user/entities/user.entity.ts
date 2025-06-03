@@ -6,6 +6,7 @@ import { FavoritePost } from "src/favorite_post/entities/favorite_post.entity";
 import { Like } from "src/like/entities/like.entity";
 import { Comment } from "src/comment/entities/comment.entity";
 import { UserMetric } from "src/user_metrics/entities/user_metric.entity";
+import { FavoriteComment } from "src/favorite_comment/entities/favorite_comment.entity";
 
 @Entity()
 export class User {
@@ -51,6 +52,9 @@ export class User {
 
     @OneToMany(() => FavoritePost, (favoritePost) => favoritePost.user)
     favoritePosts: FavoritePost[];
+
+    @OneToMany(() => FavoriteComment, (favorite_comment) => favorite_comment.user)
+    favoriteComments: FavoriteComment[];
 
     @OneToMany(() => Like, (like) => like.user)
     likes: Like[];

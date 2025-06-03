@@ -5,17 +5,23 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from '../../src/auth/guards/roles.guard';
+import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { User } from 'src/user/entities/user.entity';
+import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
 
 @Controller('category')
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+  constructor(private readonly categoryService: CategoryService, private readonly unit:UnitOfWork) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   async create(@Req() req, @Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.create(+req.user.sub, createCategoryDto);
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const newCategory = await this.categoryService.create(user, createCategoryDto);
+
+    return ResponseDto.of("Category created!!!", newCategory, "no");
   }
 
   @Get()
@@ -35,15 +41,21 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
-    return await this.categoryService.update(+id, updateCategoryDto);
+    const category = await this.unit.categoryService.findOne(+id);
+    const categoryUpdated = await this.categoryService.update(category, updateCategoryDto);
+
+    return ResponseDto.of("Category created!!!", categoryUpdated, "no");
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  remove(@Param('id') id: string) {
-    return this.categoryService.remove(+id);
+  async remove(@Param('id') id: string) {
+    const category = await this.unit.categoryService.findOne(+id);
+    await this.categoryService.remove(category);
+
+    return ResponseDto.of("Category deleted!!!", "null", "no");
   }
   
   @Get('/changeStatusActive/:id')
@@ -51,7 +63,11 @@ export class CategoryController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async changeStatusActive(@Param('id') id: string) {
-    return this.categoryService.ChangeStatusActive(+id);
+    const category = await this.unit.categoryService.findOne(+id);
+
+    const categoryUpdated = await this.categoryService.ChangeStatusActive(category);
+
+    return ResponseDto.of("Category updated!!!", categoryUpdated, "no");
   }
 
 }

@@ -26,7 +26,7 @@ export class CommentMetric {
     lastInteractionAt: Date // +
 
     @Column({ nullable: false })
-    favorites: number = 0; // -
+    favoritesCount: number = 0; // -
 
     @Column({name: "replies_count", nullable: false})
     repliesCount: number = 0; // -

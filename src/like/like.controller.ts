@@ -1,24 +1,37 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, HttpStatus, HttpCode, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, HttpStatus, HttpCode, Query, ConflictException } from '@nestjs/common';
 import { LikeService } from './like.service';
-import { CreateLikeDto } from './dto/create-like.dto';
-import { UpdateLikeDto } from './dto/update-like.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { LikeOrDislike } from './entities/likeOrDislike.enum';
+import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { User } from 'src/user/entities/user.entity';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { Like } from './entities/like.entity';
 
 @Controller('like')
 export class LikeController {
-  constructor(private readonly likeService: LikeService) {}
+  constructor(private readonly likeService: LikeService, private readonly unit: UnitOfWork) {}
 
-  @Post(':action')
+  @Post(':action/:postId')
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() createLikeDto: CreateLikeDto,
+  async create(
     @Param('action') action: LikeOrDislike,
+    @Param('postId') postId: string,
+    @Req() req
   ) {
-    return this.likeService.create(createLikeDto, action);
-  }
+    const user = await this.unit.userService.findOne(+req.user.sub);
+    const post = await this.unit.postService.findOne(+postId);
 
+    const check = await this.unit.likeService.exists(user, post);
+
+    if (check) { throw new ConflictException('Action exists!'); }
+
+    const like = this.likeService.create(user, post, action);
+
+    const userMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInPost(userMetric, ActionEnum.SUM, (await like).action);
+    
+  }
 
   @Get('/findAllofUser')
   @UseGuards(JwtAuthGuard)
@@ -33,9 +46,11 @@ export class LikeController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
+    const user = await this.unit.userService.findOne(+req.user.sub);
 
-    return this.likeService.findAllOfUser(+req.user.sub, pageNumber, limitNumber);
+    return this.likeService.findAllOfUser(user, pageNumber, limitNumber);
   }
+
 
   @Get(':id')
   @HttpCode(HttpStatus.FOUND)
@@ -45,16 +60,26 @@ export class LikeController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@Param('id') id: string) {
-    return this.likeService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req) {
+    const like = await this.unit.likeService.findOne(+id);
+
+    const user = await this.unit.userService.findOne(+req.user.sub);
+    const userMetric = await this.unit.userMetricService.findOne(user);
+    const action: Like = await this.likeService.remove(like);
+
+    await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInPost(userMetric, ActionEnum.REDUCE, action.action);
+
+    
   }
 
-  @Get('/exists/:idPost/')
+  @Get('/exists/:postId/')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.FOUND)
-  async exists(@Param('idPost') idPost: number, @Req() req) {
-    return await this.likeService.exists(+req.user.sub, idPost);
+  async exists(@Param('postId') postId: number, @Req() req) {
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const post = await this.unit.postService.findOne(postId)
+    const result = await this.likeService.exists(user, post);
   }
 
 }

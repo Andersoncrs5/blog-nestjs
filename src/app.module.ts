@@ -16,13 +16,14 @@ import { FavoritePost } from './favorite_post/entities/favorite_post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
-import { AdmModule } from './adm/adm.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { UserMetricsModule } from './user_metrics/user_metrics.module';
 import { PostMetricsModule } from './post_metrics/post_metrics.module';
 import { CommentMetricsModule } from './comment_metrics/comment_metrics.module';
+import { UnitOfWorkModule } from './utils/UnitOfWork/UnitOfWork.module';
+import { FavoriteCommentModule } from './favorite_comment/favorite_comment.module';
 
 @Module({
   imports: [
@@ -56,11 +57,12 @@ import { CommentMetricsModule } from './comment_metrics/comment_metrics.module';
     CategoryModule,
     LikeModule,
     AuthModule,
-    AdmModule,
     NotificationsModule,
     UserMetricsModule,
     PostMetricsModule,
     CommentMetricsModule,
+    UnitOfWorkModule,
+    FavoriteCommentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

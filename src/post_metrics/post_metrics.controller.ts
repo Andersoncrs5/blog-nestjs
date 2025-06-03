@@ -5,9 +5,4 @@ import { PostMetricsService } from './post_metrics.service';
 export class PostMetricsController {
   constructor(private readonly postMetricsService: PostMetricsService) {}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postMetricsService.findOne(+id);
-  }
-
 }

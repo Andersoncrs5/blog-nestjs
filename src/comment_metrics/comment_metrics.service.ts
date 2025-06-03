@@ -1,20 +1,95 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CommentService } from 'src/comment/comment.service';
 import { CommentMetric } from './entities/comment_metric.entity';
 import { Repository } from 'typeorm';
 import { Comment } from "../../src/comment/entities/comment.entity";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 
 @Injectable()
 export class CommentMetricsService {
   constructor(
     @InjectRepository(CommentMetric)
     private readonly repository: Repository<CommentMetric>,
+  ) {}  
+  
+  @Transactional()
+  async sumOrReduceRepliesCount(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.repliesCount += 1;
+    }
 
-    @Inject(forwardRef(() => CommentService))
-    private readonly commentService: CommentService
-  ) {}
+    if (action == ActionEnum.REDUCE) {
+      metric.repliesCount -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceFavoritesCount(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.favoritesCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.favoritesCount -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceReportCount(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.reportCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.reportCount -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceDislikes(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.dislikes += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.dislikes -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceLikes(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.likes += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.likes -= 1;
+    }
+
+    this.update(metric);
+  }
+
+  @Transactional()
+  async sumOrReduceEditedTimes(metric: CommentMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.editedTimes += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.editedTimes -= 1;
+    }
+
+    this.update(metric);
+  }
 
   @Transactional()
   async create(comment: Comment) {
@@ -49,10 +124,7 @@ export class CommentMetricsService {
   }
 
   @Transactional()
-  async sumViewed(id: number, amount = 1) {
-    const comment = await this.commentService.findOne(id)
-    const metric = await this.findOne(comment);
-
+  async sumViewed(metric: CommentMetric, amount = 1) {
     metric.viewsCount += amount;
     await this.update(metric);
   }

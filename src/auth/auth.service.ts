@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../../src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +16,7 @@ export class AuthService {
   @Transactional()
   async token(user: User){
     if (!user) {
-      throw new NotFoundException('User is required');
+      throw new BadRequestException('User is required');
     }
 
     const payload = { 
@@ -36,19 +36,6 @@ export class AuthService {
     return { access_token: accessToken, refresh_token: refreshToken };
   }
 
-  @Transactional()
-  async logout(userId: number) {
-    const user = await this.repository.findOne({ where: { id: userId } });
-
-    if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
-    }
-
-    user.refreshToken = null;
-    await this.repository.save(user);
-
-    return { message: 'Logout realizado com sucesso' };
-  }
 
   @Transactional()
   async refreshToken(refreshToken: string) {

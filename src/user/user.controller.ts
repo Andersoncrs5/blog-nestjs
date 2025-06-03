@@ -1,28 +1,49 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req, HttpStatus, HttpCode } from '@nestjs/common';
-import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { RefreshTokenDTO } from '../../src/auth/dtos/refresh-token.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
+import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { User } from './entities/user.entity';
+import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly unit: UnitOfWork) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
-    return await this.userService.create(createUserDto);
+    const user: User = await this.unit.userService.create(createUserDto);
+    await this.unit.userMetricService.create(user);
+    const tokens = await this.unit.authService.token(user);
+  
+    return ResponseDto.of("Welcome!!", tokens, "no");
   }
+
+  @Get('/seeProfileOfUser/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  async seeProfileOfUser(@Req() req, @Param() userId: string ) {
+    const user = await this.unit.userService.findOne(+userId);
+    const UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceProfileViews(UserMetric, ActionEnum.SUM);
+
+    return ResponseDto.of("User founded!!", user, "no");
+  }
+
 
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.FOUND)
+  @HttpCode(HttpStatus.OK)
   async findOne(@Req() req) {
-    return await this.userService.findOne(+req.user.sub);
+    const user = await this.unit.userService.findOne(+req.user.sub);
+    return ResponseDto.of("User founded!!", user, "no");
   }
 
   @Put()
@@ -30,7 +51,12 @@ export class UserController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async update(@Req() req, @Body() updateUserDto: UpdateUserDto) {
-    return await this.userService.update(+req.user.sub, updateUserDto);
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const userUpdated = await this.unit.userService.update(user, updateUserDto);
+    const UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceEditedCount(UserMetric, ActionEnum.SUM);
+
+    return ResponseDto.of("User updated with success", userUpdated, "no");
   }
 
   @Delete()
@@ -38,13 +64,20 @@ export class UserController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async remove(@Req() req) {
-    return await this.userService.remove(+req.user.sub);
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    await this.unit.userService.remove(user);
+    
+    return ResponseDto.of("User deleted", "null", "no");
   }
 
   @Post("/login")
   @HttpCode(HttpStatus.OK)
   async login(@Body() user: LoginUserDTO){
-    return await this.userService.LoginAsync(user);
+    const userFound: User = await this.unit.userService.LoginAsync(user);
+
+    const tokens = await this.unit.authService.token(userFound);
+
+    return ResponseDto.of("Welcome again!!!", tokens, "no");
   }
 
   @Post('logout')
@@ -52,7 +85,10 @@ export class UserController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req) {
-    return await this.userService.logout(req.user.sub);
+    const user: User = await this.unit.userService.findOne(req.user.sub)
+    await this.unit.userService.logout(user);
+
+    return ResponseDto.of("Bye Bye!!!", "null", "no");
   }
 
   @Post('refresh')
@@ -60,7 +96,8 @@ export class UserController {
   @ApiBody({ type: RefreshTokenDTO })
   @ApiBearerAuth()
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDTO) {
-    return await this.userService.refreshToken(refreshTokenDto.refresh_token);
+    
+    return await this.unit.authService.refreshToken(refreshTokenDto.refresh_token);
   }
 
 }

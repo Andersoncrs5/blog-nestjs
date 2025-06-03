@@ -1,23 +1,34 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req, HttpStatus, HttpCode, Query } from '@nestjs/common';
-import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FilterPostDto } from './dto/filterPost.dto';
 import { PaginationDto } from '../../src/utils/pagination.util';
-import { PostMetricsService } from '../../src/post_metrics/post_metrics.service';
+import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { User } from 'src/user/entities/user.entity';
+import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
+import { UserMetric } from 'src/user_metrics/entities/user_metric.entity';
 
 @Controller('post')
 export class PostController {
-  constructor(private readonly postService: PostService, private readonly postMetricsService: PostMetricsService) {}
+  constructor(private readonly unit: UnitOfWork ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async create(@Req() req, @Body() createPostDto: CreatePostDto) {
-    return await this.postService.create(+req.user.sub, createPostDto);
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+
+    const post = await this.unit.postService.create(user, createPostDto);
+
+    const metric = await this.unit.userMetricService.findOne(user);
+    this.unit.userMetricService.sumOrReducePostsCount(metric, ActionEnum.SUM);
+    await this.unit.postMetricsService.create(post);
+
+    return ResponseDto.of("Post created with successfully!!!", post, "no");
   }
 
   @Get()
@@ -31,7 +42,7 @@ export class PostController {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
 
-    return await this.postService.findAll(pageNumber, limitNumber);
+    return await this.unit.postService.findAll(pageNumber, limitNumber);
   }
 
   @Get('/findAllOfUser')
@@ -47,15 +58,19 @@ export class PostController {
   ) {
     const pageNumber: number = Math.max(1, parseInt(page));
     const limitNumber: number = Math.min(100, parseInt(limit));
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
 
-    return await this.postService.findAllOfUser(+req.user.sub, pageNumber, limitNumber);
+    return await this.unit.postService.findAllOfUser(user, pageNumber, limitNumber);
   }
 
   @Get('/:id')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string) {
-    await this.postMetricsService.sameViewed(+id);
-    return await this.postService.findOne(+id);
+    const post = await this.unit.postService.findOne(+id);
+    const metric = await this.unit.postMetricsService.findOne(post);
+    await this.unit.postMetricsService.sameViewed(metric);
+
+    return ResponseDto.of("Post founded with successfully!!!", post, "no");
   }
 
   @Get('findByTitle/:title')
@@ -70,7 +85,7 @@ export class PostController {
     const pageNumber: number = Math.max(1, parseInt(page));
     const limitNumber: number = Math.min(100, parseInt(limit));
 
-    return await this.postService.findByTitle(title, pageNumber, limitNumber);
+    return await this.unit.postService.findByTitle(title, pageNumber, limitNumber);
   }
 
   @Get('findByCategory/:category')
@@ -84,19 +99,30 @@ export class PostController {
   ) {
     const pageNumber: number = Math.max(1, parseInt(page));
     const limitNumber: number = Math.min(100, parseInt(limit));
-    return await this.postService.findByCategory(category, pageNumber, limitNumber);
+    return await this.unit.postService.findByCategory(category, pageNumber, limitNumber);
   }
 
   @Put('/:id')
   @HttpCode(HttpStatus.OK)
   async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return await this.postService.update(+id, updatePostDto);
+    const post = await this.unit.postService.findOne(+id)
+
+    const udpated = await this.unit.postService.update(post, updatePostDto);
+    const metric = await this.unit.postMetricsService.findOne(post);
+    await this.unit.postMetricsService.sumOrReduceEditedCount(metric, ActionEnum.SUM);
+
+    return ResponseDto.of("Post updated with successfully!!!", udpated, "no");
   }
 
   @Delete('/:id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
-    return await this.postService.remove(+id);
+    const post = await this.unit.postService.findOne(+id);
+    const metric: UserMetric = await this.unit.userMetricService.findOne(post.user);
+    await this.unit.userMetricService.sumOrReducePostsCount(metric, ActionEnum.REDUCE);
+    await this.unit.postService.remove(post);
+
+    return ResponseDto.of("Post deletd with successfully!!!", "null", "no");
   }
 
   @Get('filter')
@@ -104,7 +130,7 @@ export class PostController {
     @Query() filter: FilterPostDto,
     @Query() pagination: PaginationDto
   ) {
-    return this.postService.filter(filter, pagination);
+    return this.unit.postService.filter(filter, pagination);
   }
 
 }
