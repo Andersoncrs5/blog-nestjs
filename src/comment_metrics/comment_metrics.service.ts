@@ -5,6 +5,7 @@ import { Comment } from "../../src/comment/entities/comment.entity";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { LikeOrDislike } from 'src/like/entities/likeOrDislike.enum';
 
 @Injectable()
 export class CommentMetricsService {
@@ -53,17 +54,25 @@ export class CommentMetricsService {
   }
 
   @Transactional()
-  async sumOrReduceDislikes(metric: CommentMetric, action: ActionEnum) {
-    if (action == ActionEnum.SUM) {
-      metric.dislikes += 1;
+  async sumOrReduceDislikesOrLike(metric: CommentMetric, action: ActionEnum, likeOrDislike: LikeOrDislike) {
+      if (action == ActionEnum.SUM  && likeOrDislike == LikeOrDislike.LIKE ) {
+        metric.likes += 1;
+      }
+  
+      if (action == ActionEnum.REDUCE && likeOrDislike == LikeOrDislike.LIKE ) {
+        metric.likes -= 1;
+      }
+  
+      if (action == ActionEnum.SUM && likeOrDislike == LikeOrDislike.DISLIKE ) {
+        metric.dislikes += 1;
+      }
+  
+      if (action == ActionEnum.REDUCE && likeOrDislike == LikeOrDislike.DISLIKE ) {
+        metric.dislikes -= 1;
+      }
+  
+      this.update(metric);
     }
-
-    if (action == ActionEnum.REDUCE) {
-      metric.dislikes -= 1;
-    }
-
-    this.update(metric);
-  }
 
   @Transactional()
   async sumOrReduceLikes(metric: CommentMetric, action: ActionEnum) {

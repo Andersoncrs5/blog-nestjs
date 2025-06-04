@@ -24,6 +24,7 @@ import { PostMetricsModule } from './post_metrics/post_metrics.module';
 import { CommentMetricsModule } from './comment_metrics/comment_metrics.module';
 import { UnitOfWorkModule } from './utils/UnitOfWork/UnitOfWork.module';
 import { FavoriteCommentModule } from './favorite_comment/favorite_comment.module';
+import { LikeCommentModule } from './like_comment/like_comment.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { FavoriteCommentModule } from './favorite_comment/favorite_comment.modul
     CommentMetricsModule,
     UnitOfWorkModule,
     FavoriteCommentModule,
+    LikeCommentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

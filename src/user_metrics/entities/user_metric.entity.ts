@@ -7,6 +7,12 @@ export class UserMetric {
     @PrimaryGeneratedColumn()
     id:number
 
+    @Column({ name : 'likes_given_count_in_comment', type: 'integer', unsigned: true, default: 0 })
+    likesGivenCountInComment: number = 0 // +
+
+    @Column({ name : 'deslikes_given_count_in_comment', type: 'integer', unsigned: true, default: 0 })
+    deslikesGivenCountInComment: number = 0 // +
+
     @Column({ name : 'followers_count', type: 'integer', unsigned: true, default: 0 })
     followersCount: number = 0 // -
 

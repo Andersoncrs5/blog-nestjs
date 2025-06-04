@@ -11,6 +11,7 @@ import { CommentModule } from 'src/comment/comment.module';
 import { CategoryModule } from 'src/category/category.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { FavoriteCommentModule } from 'src/favorite_comment/favorite_comment.module';
+import { LikeCommentModule } from 'src/like_comment/like_comment.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FavoriteCommentModule } from 'src/favorite_comment/favorite_comment.mod
     forwardRef(() => CategoryModule),
     forwardRef(() => AuthModule),
     forwardRef(() => FavoriteCommentModule),
+    forwardRef(() => LikeCommentModule),
   ],
   providers: [
     UnitOfWork,

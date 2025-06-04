@@ -6,7 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UnitOfWorkModule } from 'src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserMetric]), forwardRef(() => UnitOfWorkModule)], 
+  imports: [TypeOrmModule.forFeature([UserMetric])
+  , forwardRef(() => UnitOfWorkModule)], 
   controllers: [UserMetricsController],
   providers: [UserMetricsService],
   exports: [UserMetricsService]

@@ -23,7 +23,7 @@ export class LikeService {
       user
     }
 
-    const likeSave = await this.repository.save(data);
+    const likeSave = await this.repository.create(data);
     await this.repository.save(likeSave);
 
     return likeSave;

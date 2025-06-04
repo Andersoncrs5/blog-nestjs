@@ -3,6 +3,7 @@ import { CommentMetric } from '../../../src/comment_metrics/entities/comment_met
 import { Post } from '../../../src/post/entities/post.entity';
 import { User } from '../../../src/user/entities/user.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
+import { LikeComment } from 'src/like_comment/entities/like_comment.entity';
 
 @Entity()
 export class Comment {
@@ -42,6 +43,9 @@ export class Comment {
 
   @OneToMany(() => FavoriteComment, (favorite_comment) => favorite_comment.comment)
   favoriteComments: FavoriteComment[];
+
+  @OneToMany(() => LikeComment, (like) => like.comment)
+  likesComments: LikeComment[];
 
   @CreateDateColumn()
   createdAt: Date;

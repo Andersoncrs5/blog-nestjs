@@ -153,6 +153,27 @@ export class UserMetricsService {
   }
 
   @Transactional()
+  async sumOrReduceDislikeOrLikesGivenCountInComment(metric: UserMetric, action: ActionEnum, likeOrDislike: LikeOrDislike) {
+    if (action == ActionEnum.SUM  && likeOrDislike == LikeOrDislike.LIKE ) {
+      metric.likesGivenCountInComment += 1;
+    }
+
+    if (action == ActionEnum.REDUCE && likeOrDislike == LikeOrDislike.LIKE ) {
+      metric.likesGivenCountInComment -= 1;
+    }
+
+    if (action == ActionEnum.SUM && likeOrDislike == LikeOrDislike.DISLIKE ) {
+      metric.deslikesGivenCountInComment += 1;
+    }
+
+    if (action == ActionEnum.REDUCE && likeOrDislike == LikeOrDislike.DISLIKE ) {
+      metric.deslikesGivenCountInComment -= 1;
+    }
+
+    this.update(metric, metric.user);
+  }
+
+  @Transactional()
   async sumOrReduceCommentsCount(metric: UserMetric, action: ActionEnum) {
     if (action == ActionEnum.SUM) {
       metric.commentsCount += 1;

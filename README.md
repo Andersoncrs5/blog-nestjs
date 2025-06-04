@@ -70,3 +70,4 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
 - nestjs-typeorm-paginate
 - fix bugs
 - favorite comment system
+- followers system
