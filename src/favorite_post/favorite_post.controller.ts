@@ -7,15 +7,17 @@ import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 import { UserMetric } from 'src/user_metrics/entities/user_metric.entity';
 import { PostMetric } from 'src/post_metrics/entities/post_metric.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Throttle } from '@nestjs/throttler';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller('favorite-post')
+@Controller({ path:'favorite-post', version:'1'})
 export class FavoritePostController {
   constructor(private readonly unit: UnitOfWork) {}
 
   @Post('/:postId')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Req() req, @Body() @Param() postId: string ) {
     const user = await this.unit.userService.findOne(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);
@@ -35,6 +37,7 @@ export class FavoritePostController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAllOfUser(
@@ -51,6 +54,7 @@ export class FavoritePostController {
   @Get('/exists/:postId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 8 } })
   @ApiBearerAuth()
   async exists(@Req() req, @Param('postId') postId: number ) {
     const user: User = await this.unit.userService.findOne(+req.user.sub);
@@ -60,6 +64,7 @@ export class FavoritePostController {
 
   @Delete(':id/:postId')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 2000, limit: 4 } })
   async remove(@Req() req, @Param('id') id: string, @Param() postId: string ) {
     const user: User = await this.unit.userService.findOne(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);

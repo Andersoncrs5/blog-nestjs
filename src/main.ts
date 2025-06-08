@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder, OpenAPIObject } from '@nestjs/swagger';
 import { join } from 'path';
 import fastifyStatic from '@fastify/static';
@@ -26,6 +26,10 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalFilters(new AllExceptionsFilter()); 
 
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
+
   const config: Omit<OpenAPIObject, "paths"> = new DocumentBuilder()
     .setTitle('Blog simples em NestJS')
     .setDescription('API para um blog desenvolvido em NestJS')
@@ -41,7 +45,13 @@ async function bootstrap(): Promise<void> {
     prefix: '/public/',
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: Boolean(process.env.TRANSFORM), 
+      whitelist: Boolean(process.env.WHITELIST), 
+      forbidNonWhitelisted: Boolean(process.env.FORBIDNONWHITELISTED), 
+    }),
+  );
 
   await app.listen(4000, '0.0.0.0');
 }

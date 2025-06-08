@@ -12,6 +12,7 @@ import { CategoryModule } from 'src/category/category.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { FavoriteCommentModule } from 'src/favorite_comment/favorite_comment.module';
 import { LikeCommentModule } from 'src/like_comment/like_comment.module';
+import { RecoverPasswordModule } from 'src/recover_password/recover_password.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LikeCommentModule } from 'src/like_comment/like_comment.module';
     forwardRef(() => AuthModule),
     forwardRef(() => FavoriteCommentModule),
     forwardRef(() => LikeCommentModule),
+    forwardRef(() => RecoverPasswordModule),
   ],
   providers: [
     UnitOfWork,

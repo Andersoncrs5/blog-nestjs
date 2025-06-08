@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from "class-transformer";
 import * as sanitizeHtml from "sanitize-html";
@@ -30,4 +30,7 @@ export class CreateUserDto {
     @Transform(({ value }) => value.trim() )
     @Transform(({ value }) => sanitizeHtml(value) )
     password: string;
+
+    @IsOptional()
+    version;
 }

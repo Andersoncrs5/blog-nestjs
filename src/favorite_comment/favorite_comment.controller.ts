@@ -5,15 +5,17 @@ import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
 import { User } from 'src/user/entities/user.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { Throttle } from '@nestjs/throttler';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller('favorite-comment')
+@Controller({ path:'favorite-comment', version:'1'})
 export class FavoriteCommentController {
   constructor(private readonly unit: UnitOfWork) {}
 
   @Post(':commentId')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Param('commentId') commentId: string, @Req() req) {
     const user: User = await this.unit.userService.findOne(+req.user.sub);
     const comment: Comment = await this.unit.commentService.findOne(+commentId);
@@ -29,12 +31,14 @@ export class FavoriteCommentController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async findOne(@Param('id') id: string) {
     return this.unit.favoriteCommentService.findOne(+id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 2000, limit: 4 } })
   async remove(@Param('id') id: string) {
     const favorite = await this.unit.favoriteCommentService.findOne(+id);
     const favoriteRemoved = await this.unit.favoriteCommentService.remove(favorite);
@@ -50,6 +54,7 @@ export class FavoriteCommentController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAll(

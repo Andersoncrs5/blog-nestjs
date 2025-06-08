@@ -8,8 +8,9 @@ import { RolesGuard } from '../../src/auth/guards/roles.guard';
 import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
 import { User } from 'src/user/entities/user.entity';
 import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
+import { Throttle } from '@nestjs/throttler';
 
-@Controller('category')
+@Controller({ path:'category', version:'1'})
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService, private readonly unit:UnitOfWork) {}
 
@@ -17,6 +18,7 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Req() req, @Body() createCategoryDto: CreateCategoryDto) {
     const user: User = await this.unit.userService.findOne(+req.user.sub);
     const newCategory = await this.categoryService.create(user, createCategoryDto);
@@ -26,12 +28,14 @@ export class CategoryController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 8 } })
   async findAll() {
     return await this.categoryService.findAll();
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async findOne(@Param('id') id: string) {
     return await this.categoryService.findOne(+id);
   }
@@ -40,6 +44,7 @@ export class CategoryController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
+  @Throttle({long: { ttl: 3000, limit: 4 } })
   async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     const category = await this.unit.categoryService.findOne(+id);
     const categoryUpdated = await this.categoryService.update(category, updateCategoryDto);
@@ -51,6 +56,7 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 4 } })
   async remove(@Param('id') id: string) {
     const category = await this.unit.categoryService.findOne(+id);
     await this.categoryService.remove(category);
@@ -62,6 +68,7 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async changeStatusActive(@Param('id') id: string) {
     const category = await this.unit.categoryService.findOne(+id);
 

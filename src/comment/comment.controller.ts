@@ -9,8 +9,9 @@ import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 import { PostMetric } from 'src/post_metrics/entities/post_metric.entity';
 import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
 import { User } from 'src/user/entities/user.entity';
+import { Throttle } from '@nestjs/throttler';
 
-@Controller('comment')
+@Controller({ path:'comment', version:'1'})
 export class CommentController {
   constructor(private readonly unit:UnitOfWork) {}
 
@@ -18,6 +19,7 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({long: { ttl: 3000, limit: 4 } })
   async create(@Param('postId') postId: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
     const post = await this.unit.postService.findOne(postId)
     const user = await this.unit.userService.findOne(+req.user.id);
@@ -36,6 +38,7 @@ export class CommentController {
 
   @Get('findAllOfPost/:id')
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAllOfPost(
@@ -53,6 +56,7 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAllOfUser(
@@ -68,6 +72,7 @@ export class CommentController {
 
   @Get('/findAllOfComment/:id')
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAllOfComment(
@@ -85,6 +90,7 @@ export class CommentController {
 
   @Get(':id')
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 8 } })
   async findOne(@Param('id') id: string) {
     
     const comment = await this.unit.commentService.findOne(+id);
@@ -95,6 +101,7 @@ export class CommentController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 4 } })
   async update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
     const comment = await this.unit.commentService.findOne(+id);
 
@@ -107,6 +114,7 @@ export class CommentController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 2000, limit: 2 } })
   async remove(@Req() Req, @Param('id') id: string) {
     const comment = await this.unit.commentService.findOne(+id);
 
@@ -123,6 +131,7 @@ export class CommentController {
 
   @Post('/createOnComment/:idComment/')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({long: { ttl: 3000, limit: 6 } })
   async createOnComment(@Param('idComment') idComment: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
     const comment = await this.unit.commentService.findOne(idComment);
     const commentMetric = await this.unit.commentMetricsService.findOne(comment);

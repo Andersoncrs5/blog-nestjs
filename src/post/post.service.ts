@@ -9,6 +9,7 @@ import { Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from '../../src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';
+import { Category } from 'src/category/entities/category.entity';
 
 @Injectable()
 export class PostService {
@@ -18,8 +19,8 @@ export class PostService {
   ){}
 
   @Transactional()
-  async create(user: User,createPostDto: CreatePostDto) {
-    const postData = {...createPostDto, user}
+  async create(category: Category ,user: User,createPostDto: CreatePostDto) {
+    const postData = {...createPostDto, user, category}
 
     const post = this.repository.create(postData);
     const save = await this.repository.save(post);
@@ -51,9 +52,9 @@ export class PostService {
     });
   }
 
-  async findByCategory(category: string, page: number, limit: number){  
+  async findByCategory(category: Category, page: number, limit: number){  
     const queryBuilder = this.repository.createQueryBuilder('post')
-      .where('post.category = :category', { category: category })
+      .where('post.category = :categoryId', { categoryId: category.id })
       .orderBy('post.id', 'ASC');
 
     return paginate(queryBuilder, {
@@ -91,7 +92,8 @@ export class PostService {
 
   @Transactional()
   async update(postExists: Post, updatePostDto: UpdatePostDto) {
-    const data = { ...updatePostDto, version: postExists.version }
+    const category = postExists.category;
+    const data = { ...updatePostDto, version: postExists.version, category }
     
     return await this.repository.update(postExists.id, data);
   }

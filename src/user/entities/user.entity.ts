@@ -8,6 +8,7 @@ import { Comment } from "src/comment/entities/comment.entity";
 import { UserMetric } from "src/user_metrics/entities/user_metric.entity";
 import { FavoriteComment } from "src/favorite_comment/entities/favorite_comment.entity";
 import { LikeComment } from "src/like_comment/entities/like_comment.entity";
+import { RecoverPassword } from "src/recover_password/entities/recover_password.entity";
 
 @Entity()
 export class User {
@@ -63,6 +64,10 @@ export class User {
     @OneToOne(() => UserMetric, metric => metric.user, { cascade: true, eager: true } )
     @JoinColumn()
     metric: UserMetric;
+
+    @OneToOne(() => RecoverPassword, result => result.user, { cascade: true } )
+    @JoinColumn()
+    recover: RecoverPassword;
 
     @OneToMany(() => LikeComment, (like) => like.user)
     likesComments: LikeComment[];

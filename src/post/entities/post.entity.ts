@@ -4,6 +4,7 @@ import { User } from "../../../src/user/entities/user.entity";
 import { Comment } from "../../../src/comment/entities/comment.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 import { PostMetric } from "../../../src/post_metrics/entities/post_metric.entity";
+import { Category } from "src/category/entities/category.entity";
 
 @Entity()
 export class Post {
@@ -25,6 +26,9 @@ export class Post {
     @VersionColumn()
     version: number;
 
+    @ManyToOne(() => Category, (category) => category.posts, { onDelete : 'CASCADE' } )
+    category: Category
+
     @ManyToOne(() => User, (user) => user.posts, { onDelete : 'CASCADE' } )
     user: User
 
@@ -40,9 +44,6 @@ export class Post {
 
     @OneToMany(() => Like, (like) => like.post)
     likes: Like[];
-
-    @Column({ type: "varchar", length: 150})
-    category: string
 
     @CreateDateColumn()
     createdAt: Date

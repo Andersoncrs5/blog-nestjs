@@ -7,9 +7,9 @@ import { FavoriteCommentService } from "src/favorite_comment/favorite_comment.se
 import { FavoritePostService } from "src/favorite_post/favorite_post.service"
 import { LikeService } from "src/like/like.service"
 import { LikeCommentService } from "src/like_comment/like_comment.service"
-import { NotificationsService } from "src/notifications/notifications.service"
 import { PostService } from "src/post/post.service"
 import { PostMetricsService } from "src/post_metrics/post_metrics.service"
+import { RecoverPasswordService } from "src/recover_password/recover_password.service"
 import { UserService } from "src/user/user.service"
 import { UserMetricsService } from "src/user_metrics/user_metrics.service"
 
@@ -28,5 +28,6 @@ export class UnitOfWork {
         public readonly authService: AuthService,
         public readonly favoriteCommentService: FavoriteCommentService,
         public readonly likeCommentService: LikeCommentService,
+        public readonly recoverPassword: RecoverPasswordService,
     ){}
 }

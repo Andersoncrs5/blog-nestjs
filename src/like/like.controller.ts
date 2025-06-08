@@ -7,13 +7,17 @@ import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
 import { User } from 'src/user/entities/user.entity';
 import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
 import { Like } from './entities/like.entity';
+import { Throttle } from '@nestjs/throttler/dist/throttler.decorator';
 
-@Controller('like')
+@Controller({ path:'like', version:'1'})
 export class LikeController {
   constructor(private readonly likeService: LikeService, private readonly unit: UnitOfWork) {}
 
   @Post(':action/:postId')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({long: { ttl: 4000, limit: 10 } })
   async create(
     @Param('action') action: LikeOrDislike,
     @Param('postId') postId: string,
@@ -37,6 +41,7 @@ export class LikeController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 3000, limit: 10 } })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Quantidade de itens por página (máximo 100)' })
   async findAllOfUser(
@@ -54,12 +59,14 @@ export class LikeController {
 
   @Get(':id')
   @HttpCode(HttpStatus.FOUND)
-  findOne(@Param('id') id: string) {
-    return this.likeService.findOne(+id);
+  @Throttle({long: { ttl: 3000, limit: 6 } })
+  async findOne(@Param('id') id: string) {
+    return await this.likeService.findOne(+id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 2000, limit: 6 } })
   async remove(@Param('id') id: string, @Req() req) {
     const like = await this.unit.likeService.findOne(+id);
 
@@ -76,6 +83,7 @@ export class LikeController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.FOUND)
+  @Throttle({long: { ttl: 2000, limit: 30 } })
   async exists(@Param('postId') postId: number, @Req() req) {
     const user: User = await this.unit.userService.findOne(+req.user.sub);
     const post = await this.unit.postService.findOne(postId)

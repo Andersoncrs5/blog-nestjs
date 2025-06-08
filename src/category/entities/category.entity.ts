@@ -1,5 +1,6 @@
+import { Post } from "src/post/entities/post.entity";
 import { User } from "../../../src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 
 @Entity()
 export class Category {
@@ -19,6 +20,9 @@ export class Category {
     @VersionColumn()
     version: number;
 
+    @OneToMany(() => Post, (post) => post.category)
+    posts: Post[];
+
     @ManyToOne(() => User, (user) => user.categories, { onDelete : 'CASCADE' } )
     user: User
 
@@ -28,3 +32,4 @@ export class Category {
     @UpdateDateColumn()
     updatedAt: Date
 }
+

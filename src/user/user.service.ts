@@ -15,6 +15,19 @@ export class UserService {
     private readonly repository: Repository<User>,
   ) {}
 
+
+  async findOneByEmail(email: string): Promise<User> {
+    if (!email) { throw new BadRequestException('Email is required'); }
+
+    const user: User | null = await this.repository.findOne({ where: { email } });
+
+    if (user == null) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user
+  }
+
   @Transactional()
   async create(createUserDto: CreateUserDto) {
     const user: User = await this.repository.create(createUserDto);

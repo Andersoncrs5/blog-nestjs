@@ -4,6 +4,8 @@ import { User } from '../../src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
 import { Transactional } from 'typeorm-transactional';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AuthService {
@@ -36,7 +38,6 @@ export class AuthService {
     return { access_token: accessToken, refresh_token: refreshToken };
   }
 
-
   @Transactional()
   async refreshToken(refreshToken: string) {
     const payload = this.jwtService.verify(refreshToken);
@@ -60,4 +61,6 @@ export class AuthService {
 
     return { access_token: newAccessToken };
   }
+
+
 }

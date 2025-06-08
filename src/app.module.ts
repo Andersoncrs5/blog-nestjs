@@ -25,9 +25,28 @@ import { CommentMetricsModule } from './comment_metrics/comment_metrics.module';
 import { UnitOfWorkModule } from './utils/UnitOfWork/UnitOfWork.module';
 import { FavoriteCommentModule } from './favorite_comment/favorite_comment.module';
 import { LikeCommentModule } from './like_comment/like_comment.module';
+import { RecoverPasswordModule } from './recover_password/recover_password.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 5,
+      },
+      {
+        name: 'medium',
+        ttl: 10000,
+        limit: 20
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 100
+      }
+    ]),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       useFactory() {
@@ -65,6 +84,7 @@ import { LikeCommentModule } from './like_comment/like_comment.module';
     UnitOfWorkModule,
     FavoriteCommentModule,
     LikeCommentModule,
+    RecoverPasswordModule,
   ],
   controllers: [AppController],
   providers: [AppService],
