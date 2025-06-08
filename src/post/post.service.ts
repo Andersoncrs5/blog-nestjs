@@ -9,7 +9,7 @@ import { Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from '../../src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';
-import { Category } from 'src/category/entities/category.entity';
+import { Category } from '../../src/category/entities/category.entity';
 
 @Injectable()
 export class PostService {

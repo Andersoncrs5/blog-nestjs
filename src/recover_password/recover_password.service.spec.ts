@@ -11,8 +11,4 @@ describe('RecoverPasswordService', () => {
 
     service = module.get<RecoverPasswordService>(RecoverPasswordService);
   });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
 });

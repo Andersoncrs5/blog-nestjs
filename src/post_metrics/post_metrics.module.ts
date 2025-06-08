@@ -3,7 +3,7 @@ import { PostMetricsService } from './post_metrics.service';
 import { PostMetricsController } from './post_metrics.controller';
 import { PostMetric } from './entities/post_metric.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UnitOfWorkModule } from 'src/utils/UnitOfWork/UnitOfWork.module';
+import { UnitOfWorkModule } from '../../src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([PostMetric]), 

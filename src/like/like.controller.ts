@@ -3,9 +3,9 @@ import { LikeService } from './like.service';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { LikeOrDislike } from './entities/likeOrDislike.enum';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
-import { User } from 'src/user/entities/user.entity';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
+import { User } from '../../src/user/entities/user.entity';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { Like } from './entities/like.entity';
 import { Throttle } from '@nestjs/throttler/dist/throttler.decorator';
 

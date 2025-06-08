@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { CommentMetricsService } from './comment_metrics.service';
 
 @Controller({ path:'comment-metrics', version:'1'})

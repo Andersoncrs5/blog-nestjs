@@ -1,6 +1,6 @@
 import { User } from '../../../src/user/entities/user.entity';
 import { Post } from '../../../src/post/entities/post.entity';
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('favorite_post') 
 export class FavoritePost {

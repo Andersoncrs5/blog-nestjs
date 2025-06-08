@@ -4,7 +4,7 @@ import { User } from "../../../src/user/entities/user.entity";
 import { Comment } from "../../../src/comment/entities/comment.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 import { PostMetric } from "../../../src/post_metrics/entities/post_metric.entity";
-import { Category } from "src/category/entities/category.entity";
+import { Category } from "../../../src/category/entities/category.entity";
 
 @Entity()
 export class Post {

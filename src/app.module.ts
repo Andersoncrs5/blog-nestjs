@@ -16,7 +16,6 @@ import { FavoritePost } from './favorite_post/entities/favorite_post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
-import { NotificationsModule } from './notifications/notifications.module';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { UserMetricsModule } from './user_metrics/user_metrics.module';
@@ -77,7 +76,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
     CategoryModule,
     LikeModule,
     AuthModule,
-    NotificationsModule,
     UserMetricsModule,
     PostMetricsModule,
     CommentMetricsModule,

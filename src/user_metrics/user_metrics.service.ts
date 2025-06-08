@@ -1,11 +1,11 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { UserMetric } from './entities/user_metric.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../src/user/entities/user.entity';
 import { ActionEnum } from './action/ActionEnum.enum';
-import { LikeOrDislike } from 'src/like/entities/likeOrDislike.enum';
+import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
 @Injectable()
 export class UserMetricsService {
@@ -218,17 +218,17 @@ export class UserMetricsService {
       throw new BadRequestException('User is required');
     }
 
-    const data = { user }
-
-    const created = await this.repository.create(data);
-    await this.repository.save(created);
+    const created = this.repository.create(user); 
+    return await this.repository.save(created);
   }
+
 
   @Transactional()
   async findOne(user: User): Promise<UserMetric> {
     const metric: UserMetric | null = await this.repository.findOne({ where: { user } })
 
     if (metric == null) {
+      console.log('User metric not found')
       throw new NotFoundException;
     }
 

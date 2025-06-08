@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
-import { User } from 'src/user/entities/user.entity';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
+import { User } from '../../src/user/entities/user.entity';
 import { resetPasswordDTO } from './dto/resetPasswordDTO.dto';
 import { ApiBody } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';

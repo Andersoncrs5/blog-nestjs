@@ -3,13 +3,13 @@ import { RecoverPassword } from './entities/recover_password.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../src/user/entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { isUUID } from 'class-validator';
-import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { UpdateUserDto } from '../../src/user/dto/update-user.dto';
 
 @Injectable()
 export class RecoverPasswordService {

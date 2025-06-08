@@ -4,7 +4,7 @@ import { PostMetric } from './entities/post_metric.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 
 @Injectable()
 export class PostMetricsService {

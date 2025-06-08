@@ -3,8 +3,8 @@ import { Repository } from 'typeorm';
 import { FavoritePost } from './entities/favorite_post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
-import { User } from 'src/user/entities/user.entity';
-import { Post } from 'src/post/entities/post.entity';
+import { User } from '../../src/user/entities/user.entity';
+import { Post } from '../../src/post/entities/post.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
 
 @Injectable()

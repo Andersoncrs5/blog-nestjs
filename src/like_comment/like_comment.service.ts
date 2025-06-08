@@ -1,13 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLikeCommentDto } from './dto/create-like_comment.dto';
-import { UpdateLikeCommentDto } from './dto/update-like_comment.dto';
 import { LikeComment } from './entities/like_comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Comment } from 'src/comment/entities/comment.entity';
+import { Comment } from '../../src/comment/entities/comment.entity';
 import { Transactional } from 'typeorm-transactional';
-import { User } from 'src/user/entities/user.entity';
-import { LikeOrDislike } from 'src/like/entities/likeOrDislike.enum';
+import { User } from '../../src/user/entities/user.entity';
+import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
 @Injectable()
 export class LikeCommentService {

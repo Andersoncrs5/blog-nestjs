@@ -1,15 +1,15 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req, HttpStatus, HttpCode, Query } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FilterPostDto } from './dto/filterPost.dto';
 import { PaginationDto } from '../../src/utils/pagination.util';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
-import { User } from 'src/user/entities/user.entity';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
-import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
-import { UserMetric } from 'src/user_metrics/entities/user_metric.entity';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
+import { User } from '../../src/user/entities/user.entity';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
+import { ResponseDto } from '../../src/utils/Responses/ResponseDto.reponse';
+import { UserMetric } from '../../src/user_metrics/entities/user_metric.entity';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller({ path:'post', version:'1'})

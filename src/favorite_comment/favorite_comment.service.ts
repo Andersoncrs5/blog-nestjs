@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Comment } from 'src/comment/entities/comment.entity';
-import { User } from 'src/user/entities/user.entity';
+import { Comment } from '../../src/comment/entities/comment.entity';
+import { User } from '../../src/user/entities/user.entity';
 import { Transactional } from 'typeorm-transactional';
 import { FavoriteComment } from './entities/favorite_comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';

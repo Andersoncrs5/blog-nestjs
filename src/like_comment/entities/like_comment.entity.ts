@@ -1,6 +1,6 @@
-import { Comment } from "src/comment/entities/comment.entity";
-import { LikeOrDislike } from "src/like/entities/likeOrDislike.enum";
-import { User } from "src/user/entities/user.entity";
+import { Comment } from "../../../src/comment/entities/comment.entity";
+import { LikeOrDislike } from "../../../src/like/entities/likeOrDislike.enum";
+import { User } from "../../../src/user/entities/user.entity";
 import { PrimaryGeneratedColumn, ManyToOne, Column, CreateDateColumn, Entity } from "typeorm";
 
 @Entity('likes_commnet')

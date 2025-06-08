@@ -3,7 +3,7 @@ import { RecoverPasswordService } from './recover_password.service';
 import { RecoverPasswordController } from './recover_password.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecoverPassword } from './entities/recover_password.entity';
-import { UnitOfWorkModule } from 'src/utils/UnitOfWork/UnitOfWork.module';
+import { UnitOfWorkModule } from '../../src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([RecoverPassword]),

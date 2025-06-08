@@ -3,7 +3,7 @@ import { LikeCommentService } from './like_comment.service';
 import { LikeCommentController } from './like_comment.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LikeComment } from './entities/like_comment.entity';
-import { UnitOfWorkModule } from 'src/utils/UnitOfWork/UnitOfWork.module';
+import { UnitOfWorkModule } from '../../src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([LikeComment]),

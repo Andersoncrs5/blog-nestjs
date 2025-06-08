@@ -1,9 +1,9 @@
-import { FavoriteComment } from 'src/favorite_comment/entities/favorite_comment.entity';
+import { FavoriteComment } from '../../../src/favorite_comment/entities/favorite_comment.entity';
 import { CommentMetric } from '../../../src/comment_metrics/entities/comment_metric.entity';
 import { Post } from '../../../src/post/entities/post.entity';
 import { User } from '../../../src/user/entities/user.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
-import { LikeComment } from 'src/like_comment/entities/like_comment.entity';
+import { LikeComment } from '../../../src/like_comment/entities/like_comment.entity';
 
 @Entity()
 export class Comment {

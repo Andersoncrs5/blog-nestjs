@@ -1,5 +1,5 @@
-import { User } from "src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { User } from "../../../src/user/entities/user.entity";
+import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class RecoverPassword {

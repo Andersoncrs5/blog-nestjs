@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, HttpCode, HttpStatus, Query } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Controller, Get, Post, Param, Delete, Req, UseGuards, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
-import { User } from 'src/user/entities/user.entity';
-import { Comment } from 'src/comment/entities/comment.entity';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
+import { User } from '../../src/user/entities/user.entity';
+import { Comment } from '../../src/comment/entities/comment.entity';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { Throttle } from '@nestjs/throttler';
 
 @UseGuards(JwtAuthGuard)

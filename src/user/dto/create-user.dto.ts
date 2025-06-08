@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from "class-transformer";
 import * as sanitizeHtml from "sanitize-html";
 
-
 export class CreateUserDto {
     
     @IsString({ message: "The field name should be a string" })
@@ -32,5 +31,5 @@ export class CreateUserDto {
     password: string;
 
     @IsOptional()
-    version;
+    version?;
 }

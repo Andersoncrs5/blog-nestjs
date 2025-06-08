@@ -5,9 +5,9 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from '../../src/auth/guards/roles.guard';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
-import { User } from 'src/user/entities/user.entity';
-import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
+import { User } from '../../src/user/entities/user.entity';
+import { ResponseDto } from '../../src/utils/Responses/ResponseDto.reponse';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller({ path:'category', version:'1'})

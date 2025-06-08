@@ -5,17 +5,32 @@ import { LoginUserDTO } from './dto/login-user.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { RefreshTokenDTO } from '../../src/auth/dtos/refresh-token.dto';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
-import { UnitOfWork } from 'src/utils/UnitOfWork/UnitOfWork';
+import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
 import { User } from './entities/user.entity';
-import { ResponseDto } from 'src/utils/Responses/ResponseDto.reponse';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { ResponseDto } from '../../src/utils/Responses/ResponseDto.reponse';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { Throttle } from '@nestjs/throttler';
 
-@Controller({ path:'user', version:'1'})
+// @Controller({ path:'user', version:'1'})
+@Controller('/user')
 export class UserController {
   constructor(private readonly unit: UnitOfWork) {}
 
-  @Post()
+  @Get('/see-profile-of-user/:email')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ long: { ttl: 2000, limit: 6 } })
+  @HttpCode(HttpStatus.OK)
+  async seeProfileOfUser(@Param('email') email: string, @Req() req) {
+    const user = await this.unit.userService.findOneByEmail(email);
+    const UserMetric = await this.unit.userMetricService.findOne(user);
+    await this.unit.userMetricService.sumOrReduceProfileViews(UserMetric, ActionEnum.SUM);
+
+    return ResponseDto.of("User founded!!", user, "no");
+  }
+
+
+  @Post('/register')
   @Throttle({ short: { ttl: 1000, limit: 5 } })
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
@@ -27,45 +42,42 @@ export class UserController {
     return ResponseDto.of("Welcome!!", tokens, "no");
   }
 
-  @Get('/seeProfileOfUser/:userId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Throttle({long: { ttl: 2000, limit: 5 } })
-  @HttpCode(HttpStatus.OK)
-  async seeProfileOfUser(@Req() req, @Param() userId: string ) {
-    const user = await this.unit.userService.findOne(+userId);
-    const UserMetric = await this.unit.userMetricService.findOne(user);
-    await this.unit.userMetricService.sumOrReduceProfileViews(UserMetric, ActionEnum.SUM);
-
-    return ResponseDto.of("User founded!!", user, "no");
-  }
-
-
-  @Get()
+  @Get('/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 2000, limit: 8 } })
   async findOne(@Req() req) {
-    const user = await this.unit.userService.findOne(+req.user.sub);
-    return ResponseDto.of("User founded!!", user, "no");
+    const user: User = await this.unit.userService.findOne(+req.user.sub);
+
+    return ResponseDto.of(
+      "User founded!!", 
+      user, 
+      "no"
+    );
   }
 
-  @Put()
+  @Put('/update')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 3000, limit: 4 } })
   async update(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+    console.log('UPDATE USER CONTROLLER CHAMADO');
+
     const user: User = await this.unit.userService.findOne(+req.user.sub);
     const userUpdated = await this.unit.userService.update(user, updateUserDto);
     const UserMetric = await this.unit.userMetricService.findOne(user);
     await this.unit.userMetricService.sumOrReduceEditedCount(UserMetric, ActionEnum.SUM);
 
-    return ResponseDto.of("User updated with success", userUpdated, "no");
+    return ResponseDto.of(
+      "User updated with success", 
+      userUpdated, 
+      "no"
+    );
   }
 
-  @Delete()
+  @Delete('/remove')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -85,7 +97,11 @@ export class UserController {
 
     const tokens = await this.unit.authService.token(userFound);
 
-    return ResponseDto.of("Welcome again!!!", tokens, "no");
+    return ResponseDto.of(
+      "Welcome again!!!", 
+      tokens, 
+      "no"
+    );
   }
 
   @Post('logout')
@@ -106,7 +122,6 @@ export class UserController {
   @ApiBearerAuth()
   @Throttle({long: { ttl: 2000, limit: 6 } })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDTO) {
-    
     return await this.unit.authService.refreshToken(refreshTokenDto.refresh_token);
   }
 

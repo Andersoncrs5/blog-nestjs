@@ -56,19 +56,19 @@ export class UserMetric {
     editedCount: number = 0;
 
     @Column({ type: 'float', default: 0 })
-    avgSessionTime: number; // -
+    avgSessionTime: number = 0.0 // -
     
     @Column({ type: 'int', default: 0 })
-    reportsMadeCount: number; // -
+    reportsMadeCount: number = 0 // -
 
     @Column({ type: 'int', default: 0 })
-    profileViews: number; // -
+    profileViews: number = 0 // -
 
-    @Column({ name : 'last_login'})
-    lastLogin?: Date;
+    @Column({ name : 'last_login', nullable: true})
+    lastLogin?: Date = new Date()
 
-    @Column({ name : 'last_activity'})
-    lastActivity?: Date
+    @Column({ name : 'last_activity', nullable: true})
+    lastActivity?: Date = new Date()
 
     @VersionColumn()
     version: number;

@@ -1,11 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../../src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
 import { Transactional } from 'typeorm-transactional';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class AuthService {
@@ -29,10 +27,10 @@ export class AuthService {
     };
     
     const accessToken = this.jwtService.sign(payload); 
-
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     user.refreshToken = refreshToken;
+    user.version = user.version;
     this.repository.save(user);
 
     return { access_token: accessToken, refresh_token: refreshToken };
