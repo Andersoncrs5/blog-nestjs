@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Repository } from 'typeorm';
@@ -12,14 +12,17 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
-
   ) {}
 
   @Transactional()
-  async create(user: User, createCategoryDto: CreateCategoryDto) {
+  async create(user: User, createCategoryDto: CreateCategoryDto): Promise<Category> {
+    const check = await this.repository.exists({ where: { name: createCategoryDto.name } })
+
+    if (check) { throw new ConflictException('Name in use!!!'); }
+
     const categoryCreate = { ...createCategoryDto, user, nameUser: user.name };
 
-    const category: Category = this.repository.create(categoryCreate);
+    const category: Category = await this.repository.create(categoryCreate);
     return await this.repository.save(category);
   }
 
@@ -49,13 +52,14 @@ export class CategoryService {
   }
 
   @Transactional()
-  async remove(category: Category) {
+  async remove(category: Category): Promise<void> {
     await this.repository.delete(category.id);
   }
 
   @Transactional()
   async ChangeStatusActive(category: Category) {
     category.isActived = !category.isActived;
+    category.version = category.version;
 
     return await this.repository.update(category.id, category);
   }

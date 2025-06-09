@@ -7,13 +7,25 @@ export class FilterPostDto {
 
   @IsOptional()
   @IsString()
-  category?: string;
+  categoryId: number;
 
+  @IsOptional()
+  @IsString()
+  viewedAfter?: number;
+
+  @IsOptional()
+  @IsString()
+  viewedBefore?: number;
+  
   @IsOptional()
   @IsString()
   authorName?: string;
 
   @IsDate()
   @IsOptional()
-  createdAt?: Date
+  createdAtAfter?: Date
+
+  @IsDate()
+  @IsOptional()
+  createdAtBefore?: Date
 }
