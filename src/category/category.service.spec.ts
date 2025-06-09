@@ -133,8 +133,10 @@ describe('CategoryService', () => {
       ]
     }).compile();
 
-    service = module.get<CategoryService>(CategoryService);
-    repository = module.get<Repository<Category>>(getRepositoryToken(Category));
+    service = 
+      module.get<CategoryService>(CategoryService);
+    repository = 
+      module.get<Repository<Category>>(getRepositoryToken(Category));
   })
 
   it('should be defined', async () => {

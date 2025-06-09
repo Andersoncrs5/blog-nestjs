@@ -17,14 +17,6 @@ export class CreatePostDto {
     @ApiProperty({ example: "" })
     @Transform(({ value }) => sanitizeHtml(value) )
     content: string;
-
-    @IsString({ message: "The field category should be a string" })
-    @IsNotEmpty({ message: "The field category cannot be null" })
-    @Length(1, 150, { message: "The max length of category is 150 and min is 1" })
-    @ApiProperty({ example: "" })
-    @Transform(({ value }) => sanitizeHtml(value) )
-    category: string;
-
 }
 
 

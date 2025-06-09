@@ -60,12 +60,13 @@ export class PostController {
     @Req() req,
     @Query('page') page = '1',
     @Query('limit') limit = '40',
+    @Query() filter: FilterPostDto,
   ) {
     const pageNumber: number = Math.max(1, parseInt(page));
     const limitNumber: number = Math.min(100, parseInt(limit));
     const user: User = await this.unit.userService.findOne(+req.user.sub);
 
-    return await this.unit.postService.findAllOfUser(user, pageNumber, limitNumber);
+    return await this.unit.postService.findAllOfUser(user, pageNumber, limitNumber, filter);
   }
 
   @Get('/:id')

@@ -1,4 +1,9 @@
-import { IsDate, IsOptional, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class FilterPostDto {
   @IsOptional()
@@ -6,26 +11,58 @@ export class FilterPostDto {
   title?: string;
 
   @IsOptional()
-  @IsString()
-  categoryId: number;
+  @IsNumber()
+  categoryId?: number;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   viewedAfter?: number;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   viewedBefore?: number;
-  
+
+  @IsOptional()
+  @IsNumber()
+  likeAfter?: number;
+
+  @IsOptional()
+  @IsNumber()
+  likeBefore?: number;
+
+  @IsOptional()
+  @IsNumber()
+  dislikeAfter?: number;
+
+  @IsOptional()
+  @IsNumber()
+  dislikeBefore?: number;
+
+  @IsOptional()
+  @IsNumber()
+  commentsCountAfter?: number;
+
+  @IsOptional()
+  @IsNumber()
+  commentsCountBefore?: number;
+
+  @IsOptional()
+  @IsNumber()
+  favoriteCountAfter?: number;
+
+  @IsOptional()
+  @IsNumber()
+  favoriteCountBefore?: number;
+
   @IsOptional()
   @IsString()
   authorName?: string;
 
-  @IsDate()
   @IsOptional()
-  createdAtAfter?: Date
+  @IsDate()
+  createdAtAfter?: Date;
 
-  @IsDate()
   @IsOptional()
-  createdAtBefore?: Date
+  @IsDate()
+  createdAtBefore?: Date;
 }

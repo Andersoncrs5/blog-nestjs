@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/post.entity';
-import { Repository } from 'typeorm';
+import { Like, Repository, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { Transactional } from 'typeorm-transactional';
@@ -19,13 +19,11 @@ export class PostService {
   ){}
 
   @Transactional()
-  async create(category: Category ,user: User,createPostDto: CreatePostDto) {
+  async create(category: Category ,user: User,createPostDto: CreatePostDto): Promise<Post> {
     const postData = {...createPostDto, user, category}
 
     const post = this.repository.create(postData);
-    const save = await this.repository.save(post);
-
-    return save
+    return await this.repository.save(post);
   }
 
   async findAll(page: number, limit: number) {
@@ -45,12 +43,99 @@ export class PostService {
     };
   }
 
-  async findAllOfUser(user: User, page: number, limit: number) {
-    const queryBuilder = this.repository.createQueryBuilder('post')
+  async findAllOfUser(
+    user: User,
+    page: number,
+    limit: number,
+    filter: FilterPostDto
+  ) {
+    const {
+      title,
+      authorName,
+      categoryId,
+      viewedAfter,
+      viewedBefore,
+      createdAtAfter,
+      createdAtBefore,
+      likeAfter,
+      likeBefore,
+      dislikeAfter,
+      dislikeBefore,
+      commentsCountAfter,
+      commentsCountBefore,
+      favoriteCountAfter,
+      favoriteCountBefore,
+    } = filter;
+
+    const query: SelectQueryBuilder<Post> = this.repository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.metric', 'metric')
+      .leftJoinAndSelect('post.user', 'user')
+      .leftJoinAndSelect('post.category', 'category')
       .where('post.userId = :userId', { userId: user.id })
       .orderBy('post.id', 'ASC');
 
-    return paginate(queryBuilder, {
+    if (title) {
+      query.andWhere('post.title ILIKE :title', { title: `%${title}%` });
+    }
+
+    if (authorName) {
+      query.andWhere('user.name ILIKE :authorName', { authorName: `%${authorName}%` });
+    }
+
+    if (categoryId) {
+      query.andWhere('category.id = :categoryId', { categoryId });
+    }
+
+    if (viewedAfter !== undefined) {
+      query.andWhere('metric.viewed >= :viewedAfter', { viewedAfter });
+    }
+
+    if (viewedBefore !== undefined) {
+      query.andWhere('metric.viewed <= :viewedBefore', { viewedBefore });
+    }
+
+    if (createdAtAfter) {
+      query.andWhere('post.createdAt >= :createdAtAfter', { createdAtAfter });
+    }
+
+    if (createdAtBefore) {
+      query.andWhere('post.createdAt <= :createdAtBefore', { createdAtBefore });
+    }
+
+    if (likeAfter !== undefined) {
+      query.andWhere('metric.likeCount >= :likeAfter', { likeAfter });
+    }
+
+    if (likeBefore !== undefined) {
+      query.andWhere('metric.likeCount <= :likeBefore', { likeBefore });
+    }
+
+    if (dislikeAfter !== undefined) {
+      query.andWhere('metric.dislikeCount >= :dislikeAfter', { dislikeAfter });
+    }
+
+    if (dislikeBefore !== undefined) {
+      query.andWhere('metric.dislikeCount <= :dislikeBefore', { dislikeBefore });
+    }
+
+    if (commentsCountAfter !== undefined) {
+      query.andWhere('metric.commentsCount >= :commentsCountAfter', { commentsCountAfter });
+    }
+
+    if (commentsCountBefore !== undefined) {
+      query.andWhere('metric.commentsCount <= :commentsCountBefore', { commentsCountBefore });
+    }
+
+    if (favoriteCountAfter !== undefined) {
+      query.andWhere('metric.favoriteCount >= :favoriteCountAfter', { favoriteCountAfter });
+    }
+
+    if (favoriteCountBefore !== undefined) {
+      query.andWhere('metric.favoriteCount <= :favoriteCountBefore', { favoriteCountBefore });
+    }
+
+    return paginate(query, {
       page,
       limit,
       route: '/post/findAllOfUser',
@@ -79,7 +164,7 @@ export class PostService {
       skip: (page - 1) * limit,
       take: limit,
       order: { id: 'ASC' },
-      where: { title },
+          where: { title: Like(`%${title}%`) },
       relations: [ 'user' ]
     });
 
@@ -174,6 +259,5 @@ export class PostService {
       totalPages: Math.ceil(count / pagination.limit),
     };
   }
-
 
 }
