@@ -75,8 +75,6 @@ export class LikeController {
     const action: Like = await this.likeService.remove(like);
 
     await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInPost(userMetric, ActionEnum.REDUCE, action.action);
-
-    
   }
 
   @Get('/exists/:postId/')

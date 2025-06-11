@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
+import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
 @Injectable()
 export class PostMetricsService {
@@ -14,14 +15,14 @@ export class PostMetricsService {
   ) {}
 
   @Transactional()
-  async setLastInteractionAt(metric: PostMetric) {
+  async setLastInteractionAt(metric: PostMetric): Promise<PostMetric> {
 
     metric.lastInteractionAt = new Date();
-    await this.update(metric);
+    return await this.update(metric);
   }
   
   @Transactional()
-  async sumOrReduceViewed(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceViewed(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.viewed += 1;
     }
@@ -30,11 +31,11 @@ export class PostMetricsService {
       metric.viewed -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
   
   @Transactional()
-  async sumOrReduceBookmarks(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceBookmarks(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.bookmarks += 1;
     }
@@ -43,11 +44,11 @@ export class PostMetricsService {
       metric.bookmarks -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
 
   @Transactional()
-  async sumOrReduceShares(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceShares(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.shares += 1;
     }
@@ -56,37 +57,32 @@ export class PostMetricsService {
       metric.shares -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
   
   @Transactional()
-  async sumOrReduceDislikes(metric: PostMetric, action: ActionEnum) {
-    if (action == ActionEnum.SUM) {
-      metric.dislikes += 1;
-    }
-
-    if (action == ActionEnum.REDUCE) {
-      metric.dislikes -= 1;
-    }
-
-    this.update(metric);
-  }
-
-  @Transactional()
-  async sumOrReduceLikes(metric: PostMetric, action: ActionEnum) {
-    if (action == ActionEnum.SUM) {
+  async sumOrReduceLikesOrDislikes(metric: PostMetric, action: ActionEnum, likeOrDislike: LikeOrDislike): Promise<PostMetric> {
+    if (action === ActionEnum.SUM && likeOrDislike === LikeOrDislike.LIKE) {
       metric.likes += 1;
     }
 
-    if (action == ActionEnum.REDUCE) {
+    if (action === ActionEnum.REDUCE && likeOrDislike === LikeOrDislike.LIKE) {
       metric.likes -= 1;
     }
 
-    this.update(metric);
+    if (action === ActionEnum.SUM && likeOrDislike === LikeOrDislike.DISLIKE) {
+      metric.dislikes += 1;
+    }
+
+    if (action === ActionEnum.REDUCE && likeOrDislike === LikeOrDislike.DISLIKE) {
+      metric.dislikes -= 1;
+    }
+
+    return this.update(metric);
   }
 
   @Transactional()
-  async sumOrReduceCommentsCount(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceCommentsCount(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.commentsCount += 1;
     }
@@ -95,11 +91,11 @@ export class PostMetricsService {
       metric.commentsCount -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
 
   @Transactional()
-  async sumOrReduceEditedCount(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceEditedCount(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.editedCount += 1;
     }
@@ -108,11 +104,11 @@ export class PostMetricsService {
       metric.editedCount -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
 
   @Transactional()
-  async sumOrReduceFavoriteCount(metric: PostMetric, action: ActionEnum) {
+  async sumOrReduceFavoriteCount(metric: PostMetric, action: ActionEnum): Promise<PostMetric> {
     if (action == ActionEnum.SUM) {
       metric.favoriteCount += 1;
     }
@@ -121,18 +117,17 @@ export class PostMetricsService {
       metric.favoriteCount -= 1;
     }
 
-    this.update(metric);
+    return this.update(metric);
   }
 
   @Transactional()
-  async create(post: Post) {
-    const data = { post }
+  async create(post: Post): Promise<PostMetric> {
 
-    const created = await this.repository.create(data)
-    await this.repository.save(created);
+    const created = await this.repository.create({ post })
+    return await this.repository.save(created);
   }
 
-  async findOne(post: Post) {
+  async findOne(post: Post): Promise<PostMetric> {
     const metric: PostMetric | null = await this.repository.findOne({ where : { post } })
 
     if (metric == null) {
@@ -143,18 +138,18 @@ export class PostMetricsService {
   }
 
   @Transactional()
-  async update(metric: PostMetric) {
+  async update(metric: PostMetric): Promise<PostMetric> {
     const existingMetric = await this.findOne(metric.post)
 
     metric.lastInteractionAt = new Date();
     metric.version = existingMetric.version;
 
-    await this.repository.save(metric);
+    return await this.repository.save(metric);
   }
 
-  async sameViewed(metric: PostMetric, amount: number = 1) {
+  async sameViewed(metric: PostMetric, amount: number = 1): Promise<PostMetric> {
     metric.viewed += amount;
-    await this.update(metric);
+    return await this.update(metric);
   }
 
 }

@@ -15,7 +15,7 @@ export class UserMetricsService {
   ) {}
 
   @Transactional()
-  async sumOrReduceProfileViews(metric: UserMetric, action: ActionEnum) {
+  async sumOrReduceProfileViews(metric: UserMetric, action: ActionEnum): Promise<UserMetric> {
     if (action == ActionEnum.SUM) {
       metric.profileViews += 1;
     }
@@ -24,11 +24,12 @@ export class UserMetricsService {
       metric.profileViews -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
-  async sumOrReduceEditedCount(metric: UserMetric, action: ActionEnum) {
+  async sumOrReduceEditedCount(metric: UserMetric, action: ActionEnum): Promise<UserMetric> {
     if (action == ActionEnum.SUM) {
       metric.editedCount += 1;
     }
@@ -37,7 +38,8 @@ export class UserMetricsService {
       metric.editedCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -50,7 +52,8 @@ export class UserMetricsService {
       metric.savedMediaCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -63,7 +66,8 @@ export class UserMetricsService {
       metric.followersCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -76,7 +80,8 @@ export class UserMetricsService {
       metric.savedCommentsCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -89,7 +94,8 @@ export class UserMetricsService {
       metric.savedPostsCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -102,7 +108,8 @@ export class UserMetricsService {
       metric.mediaUploadsCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -115,7 +122,8 @@ export class UserMetricsService {
       metric.reportsReceivedCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
   
   @Transactional()
@@ -128,7 +136,8 @@ export class UserMetricsService {
       metric.sharesCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -149,7 +158,8 @@ export class UserMetricsService {
       metric.deslikesGivenCountInPost -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -170,7 +180,8 @@ export class UserMetricsService {
       metric.deslikesGivenCountInComment -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -183,7 +194,8 @@ export class UserMetricsService {
       metric.commentsCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -196,7 +208,8 @@ export class UserMetricsService {
       metric.postsCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
@@ -209,12 +222,13 @@ export class UserMetricsService {
       metric.followingCount -= 1;
     }
 
-    this.update(metric, metric.user);
+    const result = this.update(metric, metric.user);
+    return result;
   }
 
   @Transactional()
-  async create(user: User) {
-    if (user == null) {
+  async create(user: User): Promise<UserMetric> {
+    if (user == null || user.id <= 0 ) {
       throw new BadRequestException('User is required');
     }
 
@@ -222,13 +236,11 @@ export class UserMetricsService {
     return await this.repository.save(created);
   }
 
-
   @Transactional()
   async findOne(user: User): Promise<UserMetric> {
     const metric: UserMetric | null = await this.repository.findOne({ where: { user } })
 
     if (metric == null) {
-      console.log('User metric not found')
       throw new NotFoundException;
     }
 
@@ -242,6 +254,6 @@ export class UserMetricsService {
     metric.lastActivity = new Date();
     metric.version = existingMetric.version;
 
-    await this.repository.save(metric);
+    return await this.repository.save(metric);
   }
 }
