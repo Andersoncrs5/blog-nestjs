@@ -19,10 +19,10 @@ export class FavoritePostController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Req() req, @Body() @Param() postId: string ) {
-    const user = await this.unit.userService.findOne(+req.user.sub);
+    const user = await this.unit.userService.findOneV2(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);
 
-    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceSavedPostsCount(userMetric, ActionEnum.SUM);
 
     const postMetric: PostMetric = await this.unit.postMetricsService.findOne(post);
@@ -47,7 +47,7 @@ export class FavoritePostController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     return this.unit.favoritePostService.findAllOfUser(user, pageNumber, limitNumber);
   }
 
@@ -57,7 +57,7 @@ export class FavoritePostController {
   @Throttle({long: { ttl: 3000, limit: 8 } })
   @ApiBearerAuth()
   async exists(@Req() req, @Param('postId') postId: number ) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);
     return await this.unit.favoritePostService.exists(user, post);
   }
@@ -66,7 +66,7 @@ export class FavoritePostController {
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 2000, limit: 4 } })
   async remove(@Req() req, @Param('id') id: string, @Param() postId: string ) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);
 
     const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);

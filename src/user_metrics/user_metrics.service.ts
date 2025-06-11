@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { UserMetric } from './entities/user_metric.entity';
 import { Repository } from 'typeorm';
@@ -6,12 +6,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../src/user/entities/user.entity';
 import { ActionEnum } from './action/ActionEnum.enum';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class UserMetricsService {
   constructor (
     @InjectRepository(UserMetric)
     private readonly repository: Repository<UserMetric>,
+    @Inject(CACHE_MANAGER)
+    private cache: Cache
+
   ) {}
 
   @Transactional()
@@ -234,6 +238,41 @@ export class UserMetricsService {
 
     const created = this.repository.create(user); 
     return await this.repository.save(created);
+  }
+
+  @Transactional()
+  async findOneV2(user: User): Promise<UserMetric> {
+
+    const key = `user_metric:${user.id}`
+    const metricCache = await this.cache.get<UserMetric>(key);
+
+    if (metricCache) {
+      return metricCache
+    }
+
+    const metric: UserMetric | null = await this.repository.findOne({ where: { user } })
+
+    if (metric == null) {
+      throw new NotFoundException;
+    }
+
+    await this.cache.set(key, metric, 60)
+
+    return metric;
+  }
+
+  @Transactional()
+  async updateV2(metric: UserMetric, user: User) {
+    const existingMetric: UserMetric = await this.findOneV2(user);
+
+    metric.lastActivity = new Date();
+    metric.version = existingMetric.version;
+
+    const key = `user_metric:${user.id}`
+    const result = await this.repository.save(metric);
+    await this.cache.set(key, metric, 60)
+
+    return result
   }
 
   @Transactional()

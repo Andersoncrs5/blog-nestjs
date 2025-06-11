@@ -26,9 +26,18 @@ import { FavoriteCommentModule } from './favorite_comment/favorite_comment.modul
 import { LikeCommentModule } from './like_comment/like_comment.module';
 import { RecoverPasswordModule } from './recover_password/recover_password.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      store: redisStore,
+      host: String(process.env.REDIS_HOST),
+      port: Number(process.env.REDIS_PORT),
+      ttl: Number(process.env.REDIS_TTL),
+    }),
     ThrottlerModule.forRoot([
       {
         name: 'short',

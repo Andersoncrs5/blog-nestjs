@@ -22,9 +22,9 @@ export class CommentController {
   @Throttle({long: { ttl: 3000, limit: 4 } })
   async create(@Param('postId') postId: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
     const post = await this.unit.postService.findOne(postId)
-    const user = await this.unit.userService.findOne(+req.user.id);
+    const user = await this.unit.userService.findOneV2(+req.user.id);
 
-    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.SUM);
 
     const postMetric: PostMetric = await this.unit.postMetricsService.findOne(post);
@@ -66,7 +66,7 @@ export class CommentController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     return this.unit.commentService.findAllOfUser(user, pageNumber, limitNumber);
   }
 
@@ -118,8 +118,8 @@ export class CommentController {
   async remove(@Req() Req, @Param('id') id: string) {
     const comment = await this.unit.commentService.findOne(+id);
 
-    const user: User = await this.unit.userService.findOne(+Req.user.id);
-    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    const user: User = await this.unit.userService.findOneV2(+Req.user.id);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.REDUCE);
 
     const postMetric: PostMetric = await this.unit.postMetricsService.findOne(comment.post);
@@ -136,8 +136,8 @@ export class CommentController {
     const comment = await this.unit.commentService.findOne(idComment);
     const commentMetric = await this.unit.commentMetricsService.findOne(comment);
 
-    const user: User = await this.unit.userService.findOne(+req.user.id);
-    const userMetric: UserMetric = await this.unit.userMetricService.findOne(user);
+    const user: User = await this.unit.userService.findOneV2(+req.user.id);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceCommentsCount(userMetric, ActionEnum.SUM);
 
     const postMetric: PostMetric = await this.unit.postMetricsService.findOne(comment.post);

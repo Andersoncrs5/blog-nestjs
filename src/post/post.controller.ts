@@ -23,11 +23,11 @@ export class PostController {
   @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Param('categoryId') categoryId: string, @Req() req, @Body() createPostDto: CreatePostDto) {
     const category = await this.unit.categoryService.findOne(+categoryId);
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
 
     const post = await this.unit.postService.create(category, user, createPostDto);
 
-    const metric = await this.unit.userMetricService.findOne(user);
+    const metric = await this.unit.userMetricService.findOneV2(user);
     this.unit.userMetricService.sumOrReducePostsCount(metric, ActionEnum.SUM);
     await this.unit.postMetricsService.create(post);
 
@@ -64,7 +64,7 @@ export class PostController {
   ) {
     const pageNumber: number = Math.max(1, parseInt(page));
     const limitNumber: number = Math.min(100, parseInt(limit));
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
 
     return await this.unit.postService.findAllOfUser(user, pageNumber, limitNumber, filter);
   }
@@ -130,7 +130,7 @@ export class PostController {
   @Throttle({long: { ttl: 2000, limit: 4 } })
   async remove(@Param('id') id: string) {
     const post = await this.unit.postService.findOne(+id);
-    const metric: UserMetric = await this.unit.userMetricService.findOne(post.user);
+    const metric: UserMetric = await this.unit.userMetricService.findOneV2(post.user);
     await this.unit.userMetricService.sumOrReducePostsCount(metric, ActionEnum.REDUCE);
     await this.unit.postService.remove(post);
 

@@ -8,6 +8,7 @@ import { User } from '../../src/user/entities/user.entity';
 import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { Like } from './entities/like.entity';
 import { Throttle } from '@nestjs/throttler/dist/throttler.decorator';
+import { UserMetric } from 'src/user_metrics/entities/user_metric.entity';
 
 @Controller({ path:'like', version:'1'})
 export class LikeController {
@@ -23,7 +24,7 @@ export class LikeController {
     @Param('postId') postId: string,
     @Req() req
   ) {
-    const user = await this.unit.userService.findOne(+req.user.sub);
+    const user = await this.unit.userService.findOneV2(+req.user.sub);
     const post = await this.unit.postService.findOne(+postId);
 
     const check = await this.unit.likeService.exists(user, post);
@@ -32,7 +33,7 @@ export class LikeController {
 
     const like = this.likeService.create(user, post, action);
 
-    const userMetric = await this.unit.userMetricService.findOne(user);
+    const userMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInPost(userMetric, ActionEnum.SUM, (await like).action);
     
   }
@@ -51,7 +52,7 @@ export class LikeController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    const user = await this.unit.userService.findOne(+req.user.sub);
+    const user = await this.unit.userService.findOneV2(+req.user.sub);
 
     return this.likeService.findAllOfUser(user, pageNumber, limitNumber);
   }
@@ -70,8 +71,8 @@ export class LikeController {
   async remove(@Param('id') id: string, @Req() req) {
     const like = await this.unit.likeService.findOne(+id);
 
-    const user = await this.unit.userService.findOne(+req.user.sub);
-    const userMetric = await this.unit.userMetricService.findOne(user);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
+    const userMetric: UserMetric = await this.unit.userMetricService.findOneV2(user);
     const action: Like = await this.likeService.remove(like);
 
     await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInPost(userMetric, ActionEnum.REDUCE, action.action);
@@ -83,7 +84,7 @@ export class LikeController {
   @HttpCode(HttpStatus.FOUND)
   @Throttle({long: { ttl: 2000, limit: 30 } })
   async exists(@Param('postId') postId: number, @Req() req) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const post = await this.unit.postService.findOne(postId)
     const result = await this.likeService.exists(user, post);
   }

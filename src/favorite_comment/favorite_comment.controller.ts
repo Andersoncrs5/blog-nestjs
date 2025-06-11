@@ -17,7 +17,7 @@ export class FavoriteCommentController {
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Param('commentId') commentId: string, @Req() req) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const comment: Comment = await this.unit.commentService.findOne(+commentId);
 
     const commentMetric = await this.unit.commentMetricsService.findOne(comment);
@@ -48,8 +48,6 @@ export class FavoriteCommentController {
 
     const userMetric = await this.unit.userMetricService.findOne(favoriteRemoved.user);
     await this.unit.userMetricService.sumOrReduceSavedCommentsCount(userMetric, ActionEnum.REDUCE);
-
-
   }
 
   @Get()
@@ -65,7 +63,7 @@ export class FavoriteCommentController {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
 
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     return this.unit.favoriteCommentService.findAllOfUser(user, pageNumber, limitNumber);
   }
 }

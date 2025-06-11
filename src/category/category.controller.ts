@@ -20,7 +20,7 @@ export class CategoryController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Req() req, @Body() createCategoryDto: CreateCategoryDto) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const newCategory = await this.categoryService.create(user, createCategoryDto);
 
     return ResponseDto.of("Category created!!!", newCategory, "no");
@@ -28,9 +28,16 @@ export class CategoryController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @Throttle({long: { ttl: 3000, limit: 8 } })
+  @Throttle({long: { ttl: 3000, limit: 10 } })
   async findAll() {
     return await this.categoryService.findAll();
+  }
+
+  @Get('/v2')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 3000, limit: 10 } })
+  async findAllV2() {
+    return await this.categoryService.findAllV2();
   }
 
   @Get(':id')

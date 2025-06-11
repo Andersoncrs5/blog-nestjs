@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Repository } from 'typeorm';
@@ -6,12 +6,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { User } from '../../src/user/entities/user.entity';
 import { Transactional } from 'typeorm-transactional';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
+    @Inject(CACHE_MANAGER)
+    private readonly cache: Cache
   ) {}
 
   @Transactional()
@@ -26,8 +29,25 @@ export class CategoryService {
     return await this.repository.save(category);
   }
 
+  async findAllV2(): Promise<Category[]> {
+    const key = `category:all`
+
+    const categoryCache = await this.cache.get<Category[]>(key);
+
+    if (categoryCache) {
+      return categoryCache;
+    }
+
+    const result = await this.repository.find({ where: { isActived: true } });
+
+    await this.cache.set(key, categoryCache, 200);
+
+    return result;
+  }
+
   async findAll(): Promise<Category[]> {
-    return await this.repository.find({ where: { isActived: true } });
+    const result = await this.repository.find({ where: { isActived: true } });
+    return result;
   }
 
   async findOne(id: number): Promise<Category> {

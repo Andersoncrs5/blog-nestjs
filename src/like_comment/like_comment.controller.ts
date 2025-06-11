@@ -18,7 +18,7 @@ export class LikeCommentController {
   @Post('/:commentId/:action')
   @Throttle({long: { ttl: 3000, limit: 6 } })
   async create(@Req() req, @Param('commentId') commentId: string, @Param('action') action: LikeOrDislike ) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const comment: Comment = await this.unit.commentService.findOne(+commentId);
 
     const userMetric = await this.unit.userMetricService.findOne(user);
@@ -42,7 +42,7 @@ export class LikeCommentController {
   ) {
     const pageNumber = Math.max(1, parseInt(page));
     const limitNumber = Math.min(100, parseInt(limit));
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     return await this.unit.likeCommentService.findAllOfUser(user, pageNumber, limitNumber);
   }
 
@@ -50,7 +50,7 @@ export class LikeCommentController {
   @Get('/exists/:commentId')
   @Throttle({long: { ttl: 2000, limit: 14 } })
   async exists(@Req() req, @Param('commentId') commentId: string) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const comment: Comment = await this.unit.commentService.findOne(+commentId);
 
     return await this.unit.likeCommentService.exists(user, comment);
@@ -67,7 +67,7 @@ export class LikeCommentController {
   async remove(@Param('id') id: string) {
     const action = await this.unit.likeCommentService.findOne(+id);
 
-    const userMetric = await this.unit.userMetricService.findOne(action.user);
+    const userMetric = await this.unit.userMetricService.findOneV2(action.user);
     await this.unit.userMetricService.sumOrReduceDislikeOrLikesGivenCountInComment(userMetric, ActionEnum.REDUCE, action.action);
 
     const commentMetric = await this.unit.commentMetricsService.findOne(action.comment);

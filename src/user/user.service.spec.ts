@@ -24,6 +24,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CryptoService } from '../../CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
+import * as redisStore from 'cache-manager-redis-store';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 
 let app;
 
@@ -76,6 +78,15 @@ describe('UserService', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: async () => ({
+            store: redisStore as any,
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            ttl: parseInt(process.env.REDIS_TTL || '120'),
+          }),
+        }),
         TypeOrmModule.forRootAsync({
           useFactory() {
             return {
@@ -125,6 +136,14 @@ describe('UserService', () => {
           provide: getRepositoryToken(User),
           useValue: mockRepository,
         },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -135,6 +154,8 @@ describe('UserService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  
 
   it('should throw bad request in findOne', async ()=> {
     await expect(service.findOne(NaN)).rejects.toThrow(BadRequestException);

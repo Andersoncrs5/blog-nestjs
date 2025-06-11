@@ -23,7 +23,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async seeProfileOfUser(@Param('email') email: string, @Req() req) {
     const user = await this.unit.userService.findOneByEmail(email);
-    const UserMetric = await this.unit.userMetricService.findOne(user);
+    const UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceProfileViews(UserMetric, ActionEnum.SUM);
 
     return ResponseDto.of("User founded!!", user, "no");
@@ -57,6 +57,21 @@ export class UserController {
     );
   }
 
+  @Get('v2/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({long: { ttl: 2000, limit: 8 } })
+  async findOneV2(@Req() req) {
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
+
+    return ResponseDto.of(
+      "User founded!!", 
+      user, 
+      "no"
+    );
+  }
+
   @Put('/update')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -65,9 +80,9 @@ export class UserController {
   async update(@Req() req, @Body() updateUserDto: UpdateUserDto) {
     console.log('UPDATE USER CONTROLLER CHAMADO');
 
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     const userUpdated = await this.unit.userService.update(user, updateUserDto);
-    const UserMetric = await this.unit.userMetricService.findOne(user);
+    const UserMetric = await this.unit.userMetricService.findOneV2(user);
     await this.unit.userMetricService.sumOrReduceEditedCount(UserMetric, ActionEnum.SUM);
 
     return ResponseDto.of(
@@ -83,7 +98,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 2000, limit: 2 } })
   async remove(@Req() req) {
-    const user: User = await this.unit.userService.findOne(+req.user.sub);
+    const user: User = await this.unit.userService.findOneV2(+req.user.sub);
     await this.unit.userService.remove(user);
     
     return ResponseDto.of("User deleted", "null", "no");
@@ -110,7 +125,7 @@ export class UserController {
   @Throttle({long: { ttl: 2000, limit: 4 } })
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req) {
-    const user: User = await this.unit.userService.findOne(req.user.sub)
+    const user: User = await this.unit.userService.findOneV2(req.user.sub)
     await this.unit.userService.logout(user);
 
     return ResponseDto.of("Bye Bye!!!", "null", "no");

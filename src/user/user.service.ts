@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,13 +7,37 @@ import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from '../../CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { Transactional } from 'typeorm-transactional';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly repository: Repository<User>,
+    @Inject(CACHE_MANAGER) private cache: Cache
   ) {}
+
+  async findOneV2(id: number): Promise<User> {
+    if (!id || isNaN(id) || id <= 0) {
+      throw new BadRequestException('ID must be a positive number');
+    }
+
+    const key = `user:${id}`;
+    const cached = await this.cache.get<User>(key);
+
+    if (cached) return cached;
+
+    const user: User | null = await this.repository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    await this.cache.set(key, user, 120)
+
+    return user;
+  }
 
   async findOneByEmail(email: string): Promise<User> {
     if (!email || email == "") { throw new BadRequestException('Email is required'); }
@@ -38,7 +62,7 @@ export class UserService {
 
     return userSave;
   }
-  
+
   async findOne(id: number): Promise<User> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');
@@ -88,6 +112,8 @@ export class UserService {
   @Transactional()
   async logout(user: User) {
     user.refreshToken = null;
+    const key = `user:${user.id}`;
+    await this.cache.del(key)
     await this.repository.save(user);
   }  
 
