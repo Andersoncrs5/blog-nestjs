@@ -61,6 +61,20 @@ export class UserMetricsService {
   }
 
   @Transactional()
+  async sumOrReduceFolloweringCount(metric: UserMetric, action: ActionEnum) {
+    if (action == ActionEnum.SUM) {
+      metric.followingCount += 1;
+    }
+
+    if (action == ActionEnum.REDUCE) {
+      metric.followingCount -= 1;
+    }
+
+    const result = this.update(metric, metric.user);
+    return result;
+  }
+
+  @Transactional()
   async sumOrReduceFollowersCount(metric: UserMetric, action: ActionEnum) {
     if (action == ActionEnum.SUM) {
       metric.followersCount += 1;

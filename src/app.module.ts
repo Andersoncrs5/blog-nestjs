@@ -27,6 +27,7 @@ import { LikeCommentModule } from './like_comment/like_comment.module';
 import { RecoverPasswordModule } from './recover_password/recover_password.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
+import { FollowersModule } from './followers/followers.module';
 import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
@@ -92,6 +93,7 @@ import * as redisStore from 'cache-manager-redis-store';
     FavoriteCommentModule,
     LikeCommentModule,
     RecoverPasswordModule,
+    FollowersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
