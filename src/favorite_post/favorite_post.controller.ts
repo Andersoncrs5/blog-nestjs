@@ -75,7 +75,7 @@ export class FavoritePostController {
     const postMetric: PostMetric = await this.unit.postMetricsService.findOne(post);
     await this.unit.postMetricsService.sumOrReduceFavoriteCount(postMetric, ActionEnum.REDUCE);
 
-    await this.unit.favoritePostService.remove(+id);
+    await this.unit.favoritePostService.remove(+id, user);
 
     return ResponseDto.of("Post removed with favorite!!!", 'null', "no");
   }

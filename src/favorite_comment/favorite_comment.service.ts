@@ -1,11 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Comment } from '../../src/comment/entities/comment.entity';
 import { User } from '../../src/user/entities/user.entity';
 import { Transactional } from 'typeorm-transactional';
 import { FavoriteComment } from './entities/favorite_comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { paginate } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class FavoriteCommentService {
@@ -15,16 +14,14 @@ export class FavoriteCommentService {
   ) {}
 
   @Transactional()
-  async create(user: User, comment: Comment) {
-    const data = { user, comment }
+  async create(user: User, comment: Comment): Promise<FavoriteComment> {
+    const check: boolean = await this.repository.exists({ where: { user, comment } });
 
-    if(await this.existsItem(user, comment)) { throw new ConflictException(); }
+    if(check) { throw new ConflictException('You already to favorite this comment'); }
 
-    const save = await this.repository.save(data);
+    const created = this.repository.create({ user, comment });
 
-    await this.repository.create(save);
-
-    return save;
+    return await this.repository.save(created);
   }
 
   async existsItem(user: User, comment: Comment): Promise<boolean> {
@@ -32,27 +29,39 @@ export class FavoriteCommentService {
   }
 
   async findAllOfUser(user: User, page: number, limit: number) {
-    const queryBuilder = this.repository.createQueryBuilder('favorite_post')
-      .where('favorite_post.userId = :userId', { userId: user.id })
-      .orderBy('favorite_post.id', 'ASC');
-
-    return paginate(queryBuilder, {
-      page,
-      limit,
-      route: '/post/findAllOfUser',
+    const [result, count] = await this.repository.findAndCount({ 
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'ASC' },
+      where: { user },
     });
+
+    return {
+      data: result,
+      totalItems: count,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+    };
   }
 
   async findOne(id: number): Promise<FavoriteComment> {
+    if (!id || isNaN(id) || id <= 0) {
+      throw new BadRequestException('ID must be a positive number');
+    }
+    
     const favorite: FavoriteComment | null = await this.repository.findOne({ where: { id } })
 
-    if (!favorite) { throw new NotFoundException(''); }
+    if (!favorite) { throw new NotFoundException('Favorite not found'); }
 
     return favorite;
   }
 
   @Transactional()
-  async remove(favorite: FavoriteComment) {
+  async remove(favorite: FavoriteComment, user: User): Promise<FavoriteComment> {
+    if (favorite.user.id !== user.id) { 
+      throw new BadRequestException('You do not have permission to remove this favorite'); 
+    }
+
     await this.repository.delete(favorite);
     return favorite;
   }

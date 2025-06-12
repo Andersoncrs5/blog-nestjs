@@ -16,13 +16,10 @@ export class CommentService {
   ){}
 
   @Transactional()
-  async create(post: Post, user: User, createCommentDto: CreateCommentDto) {
-    const commentCreated = { ...createCommentDto, post, user, nameUser: user.name };
-    const comment = this.repository.create(commentCreated);
+  async create(post: Post, user: User, createCommentDto: CreateCommentDto): Promise<Comment> {
+    const comment: Comment = this.repository.create({ ...createCommentDto, post, user, nameUser: user.name });
 
-    const commentSave = await this.repository.save(comment);
-
-    return commentSave;
+    return await this.repository.save(comment);
   }
 
   async findAllOfPost(post: Post, page: number, limit: number) {
@@ -45,8 +42,24 @@ export class CommentService {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
       take: limit,
-      order: { id: 'ASC' },
+      order: { createdAt: 'ASC' },
       where: { user }
+    });
+
+    return {
+      data: result,
+      totalItems: count,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+    };
+  }
+
+  async findAllOfComment(comment: Comment, page: number, limit: number) {
+    const [result, count] = await this.repository.findAndCount({ 
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'ASC' },
+      where: { parentId : comment.id }
     });
 
     return {
@@ -65,7 +78,7 @@ export class CommentService {
     const comment: Comment | null = await this.repository.findOne({ where: { id } });
 
     if (!comment) {
-      throw new NotFoundException(`Comment not found with ID: ${id}`);
+      throw new NotFoundException(`Comment not found`);
     }
 
     return comment;
@@ -73,17 +86,16 @@ export class CommentService {
 
   @Transactional()
   async update(comment: Comment, updateCommentDto: UpdateCommentDto): Promise<Comment> {
-    const updatedComment = { ...comment, ...updateCommentDto };
-    updatedComment.isEdited = true;
-
-    await this.repository.save(updatedComment);
-
-    return updatedComment;
+    return await this.repository.save({ 
+      ...comment, 
+      ...updateCommentDto, 
+      isEdited: true
+     })
   }
 
   @Transactional()
   async remove(comment: Comment) {
-    const commentReplies: Comment[] = await this.repository.find({ where: { parentId: comment.id } });
+    const commentReplies: Comment[] = await this.repository.find({ where: { parentId: comment.id, isActived: true, isBlocked: false } });
 
     for (const reply of commentReplies) {
       await this.repository.delete(reply.id);
@@ -105,21 +117,5 @@ export class CommentService {
     const commentSave = await this.repository.save(commentCreated);
 
     return commentSave;
-  }
-
-  async findAllOfComment(comment: Comment, page: number, limit: number) {
-    const [result, count] = await this.repository.findAndCount({ 
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { id: 'ASC' },
-      where: { parentId : comment.id }
-    });
-
-    return {
-      data: result,
-      totalItems: count,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-    };
   }
 }

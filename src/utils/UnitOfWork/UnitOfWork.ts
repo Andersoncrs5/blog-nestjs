@@ -12,7 +12,7 @@ import { PostMetricsService } from "../../../src/post_metrics/post_metrics.servi
 import { RecoverPasswordService } from "../../../src/recover_password/recover_password.service"
 import { UserService } from "../../../src/user/user.service"
 import { UserMetricsService } from "../../../src/user_metrics/user_metrics.service"
-import { FollowersService } from "src/followers/followers.service"
+import { FollowersService } from "../../../src/followers/followers.service"
 
 @Injectable()
 export class UnitOfWork {

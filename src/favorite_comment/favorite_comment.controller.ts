@@ -39,9 +39,10 @@ export class FavoriteCommentController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @Throttle({long: { ttl: 2000, limit: 4 } })
-  async remove(@Param('id') id: string) {
+  async remove(@Req() req, @Param('id') id: string) {
     const favorite = await this.unit.favoriteCommentService.findOne(+id);
-    const favoriteRemoved = await this.unit.favoriteCommentService.remove(favorite);
+    const user = await this.unit.userService.findOneV2(+req.user.sub);
+    const favoriteRemoved = await this.unit.favoriteCommentService.remove(favorite, user);
 
     const commentMetric = await this.unit.commentMetricsService.findOne(favoriteRemoved.comment);
     await this.unit.commentMetricsService.sumOrReduceFavoritesCount(commentMetric, ActionEnum.REDUCE);

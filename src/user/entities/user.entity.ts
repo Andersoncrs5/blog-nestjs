@@ -9,7 +9,7 @@ import { UserMetric } from "../../../src/user_metrics/entities/user_metric.entit
 import { FavoriteComment } from "../../../src/favorite_comment/entities/favorite_comment.entity";
 import { LikeComment } from "../../../src/like_comment/entities/like_comment.entity";
 import { RecoverPassword } from "../../../src/recover_password/entities/recover_password.entity";
-import { Follower } from "src/followers/entities/follower.entity";
+import { Follower } from "../../../src/followers/entities/follower.entity";
 
 @Entity()
 export class User {

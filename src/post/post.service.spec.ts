@@ -25,6 +25,9 @@ import { FilterPostDto } from './dto/filterPost.dto';
 import { paginate } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from 'src/utils/pagination.util';
 import { Like as a } from 'typeorm';
+import { Follower } from '../../src/followers/entities/follower.entity';
+import * as redisStore from 'cache-manager-redis-store';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 
 jest.mock('nestjs-typeorm-paginate');
 
@@ -103,6 +106,15 @@ describe('PostService unitary tes', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: async () => ({
+            store: redisStore as any,
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            ttl: parseInt(process.env.REDIS_TTL || '120'),
+          }),
+        }),
         TypeOrmModule.forRootAsync({
           useFactory() {
             return {
@@ -114,7 +126,7 @@ describe('PostService unitary tes', () => {
               database: 'test',
               dropSchema: true,
               entities: [
-                User, Post, Category, Comment, FavoritePost,
+                User, Post, Category, Comment, FavoritePost, Follower,
                 FavoriteComment, Like, UserMetric, RecoverPassword,
                 LikeComment, PostMetric, CommentMetric
               ],
@@ -128,7 +140,7 @@ describe('PostService unitary tes', () => {
           }
         }),
         TypeOrmModule.forFeature([
-          CommentMetric, PostMetric, User, Post, Category, Comment,
+          CommentMetric, PostMetric, User, Post, Category, Comment, Follower,
           FavoritePost, FavoriteComment, Like, UserMetric, RecoverPassword, LikeComment
         ]),
         UnitOfWorkModule,
@@ -151,7 +163,15 @@ describe('PostService unitary tes', () => {
         {
           provide: getRepositoryToken(Post),
           useValue: mockRepository
-        }
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+          },
+        },
       ]
     }).compile()
 
@@ -176,8 +196,8 @@ describe('PostService unitary tes', () => {
 
     await expect(service.findOne(id)).rejects.toThrow(NotFoundException);
 
-    await expect(findOneSpy).toHaveBeenCalledTimes(1)
-    await expect(findOneSpy).toHaveBeenCalledWith({ where: { id } });
+    expect(findOneSpy).toHaveBeenCalledTimes(1)
+    expect(findOneSpy).toHaveBeenCalledWith({ where: { id } });
 
   });
 
@@ -186,13 +206,13 @@ describe('PostService unitary tes', () => {
 
     const result = await service.findOne(mockPost.id);
 
-    await expect(result.id).toBe(mockPost.id)
-    await expect(result.title).toBe(mockPost.title)
-    await expect(result.content).toBe(mockPost.content)
-    await expect(result.user.id).toBe(mockPost.user.id)
-    await expect(result.category.id).toBe(mockPost.category.id)
+    expect(result.id).toBe(mockPost.id)
+    expect(result.title).toBe(mockPost.title)
+    expect(result.content).toBe(mockPost.content)
+    expect(result.user.id).toBe(mockPost.user.id)
+    expect(result.category.id).toBe(mockPost.category.id)
 
-    await expect(findOneSpy).toHaveBeenCalledWith({ where: { id: mockPost.id } });
+    expect(findOneSpy).toHaveBeenCalledWith({ where: { id: mockPost.id } });
 
   });
 
@@ -204,8 +224,8 @@ describe('PostService unitary tes', () => {
 
     await service.remove(post);
 
-    await expect(deleteSpy).toHaveBeenCalledTimes(1)
-    await expect(deleteSpy).toHaveBeenCalledWith(post)
+    expect(deleteSpy).toHaveBeenCalledTimes(1)
+    expect(deleteSpy).toHaveBeenCalledWith(post)
   });
 
   it('should create a post', async ()=> {

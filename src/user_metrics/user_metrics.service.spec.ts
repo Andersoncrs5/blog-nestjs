@@ -21,6 +21,9 @@ import { UserMetricsController } from './user_metrics.controller';
 import { NotFoundException } from '@nestjs/common';
 import { ActionEnum } from './action/ActionEnum.enum';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
+import * as redisStore from 'cache-manager-redis-store';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
+import { Follower } from '../../src/followers/entities/follower.entity';
 
 let app;
 
@@ -91,6 +94,15 @@ describe('UserMetricsService', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: async () => ({
+            store: redisStore as any,
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            ttl: parseInt(process.env.REDIS_TTL || '120'),
+          }),
+        }),
         TypeOrmModule.forRootAsync({
           useFactory() {
             return {
@@ -104,7 +116,7 @@ describe('UserMetricsService', () => {
               entities: [
                 User, Post, Category, Comment, FavoritePost,
                 FavoriteComment, Like, UserMetric, RecoverPassword,
-                LikeComment, PostMetric, CommentMetric
+                LikeComment, PostMetric, CommentMetric, Follower
               ],
               autoLoadEntities: true,
               synchronize: true,
@@ -118,7 +130,7 @@ describe('UserMetricsService', () => {
         TypeOrmModule.forFeature([
           User, Post, Category, Comment, FavoritePost,
           FavoriteComment, Like, UserMetric, RecoverPassword,
-          LikeComment, PostMetric, CommentMetric
+          LikeComment, PostMetric, CommentMetric, Follower
         ]),
         UnitOfWorkModule,
         UserMetricsModule
@@ -140,7 +152,15 @@ describe('UserMetricsService', () => {
         {
           provide: getRepositoryToken(UserMetric),
           useValue: mockRepository
-        }
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+          },
+        },
       ]
     }).compile()
     service = module.get<UserMetricsService>(UserMetricsService)
@@ -322,6 +342,42 @@ describe('UserMetricsService', () => {
 
     expect(result.id).toBe(metric.id)
     expect(result.followersCount).toBe(value)
+
+    expect(findOne).toHaveBeenCalledWith({ where: { user: mockUser } })
+
+    expect(saveSpy).toHaveBeenCalledWith(mockMetricUser)
+  });
+
+  it('should sum following Count in user metric', async ()=> {
+    const metric: UserMetric = Object.assign(new UserMetric, mockMetricUser, { followingCount: 0 })
+
+    const value = metric.followingCount + 1
+
+    const findOne = jest.spyOn(service['repository'], 'findOne').mockResolvedValue(metric);
+    const saveSpy = jest.spyOn(service['repository'], 'save').mockResolvedValue(metric);
+
+    const result = await service.sumOrReduceFollowingCount(metric, ActionEnum.SUM);
+
+    expect(result.id).toBe(metric.id)
+    expect(result.followingCount).toBe(value)
+
+    expect(findOne).toHaveBeenCalledWith({ where: { user: mockUser } })
+
+    expect(saveSpy).toHaveBeenCalledWith(mockMetricUser)
+  });
+
+  it('should reduce following Count in user metric', async ()=> {
+    const metric: UserMetric = Object.assign(new UserMetric, mockMetricUser, { followingCount: 1 })
+
+    const value = metric.followingCount - 1
+
+    const findOne = jest.spyOn(service['repository'], 'findOne').mockResolvedValue(metric);
+    const saveSpy = jest.spyOn(service['repository'], 'save').mockResolvedValue(metric);
+
+    const result = await service.sumOrReduceFollowingCount(metric, ActionEnum.REDUCE);
+
+    expect(result.id).toBe(metric.id)
+    expect(result.followingCount).toBe(value)
 
     expect(findOne).toHaveBeenCalledWith({ where: { user: mockUser } })
 

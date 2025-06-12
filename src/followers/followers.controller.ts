@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseGuards, HttpStatus, Req } from '@nestjs/common';
-import { FollowersService } from './followers.service';
+import { Controller, Get, Post, Param, Delete, HttpCode, UseGuards, HttpStatus, Req } from '@nestjs/common';
 import { UnitOfWork } from '../../src/utils/UnitOfWork/UnitOfWork';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 import { User } from '../../src/user/entities/user.entity';
-import { ActionEnum } from 'src/user_metrics/action/ActionEnum.enum';
+import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 
 @Controller('followers')
 export class FollowersController {

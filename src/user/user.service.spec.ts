@@ -26,6 +26,7 @@ import { CryptoService } from '../../CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
 import * as redisStore from 'cache-manager-redis-store';
 import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
+import { Follower } from '../../src/followers/entities/follower.entity';
 
 let app;
 
@@ -100,7 +101,7 @@ describe('UserService', () => {
               entities: [
                 User, Post, Category, Comment, FavoritePost,
                 FavoriteComment, Like, UserMetric, RecoverPassword,
-                LikeComment, PostMetric, CommentMetric
+                LikeComment, PostMetric, CommentMetric, Follower
               ],
               autoLoadEntities: true,
               synchronize: true,
@@ -113,7 +114,7 @@ describe('UserService', () => {
         }),
         TypeOrmModule.forFeature([
           CommentMetric, PostMetric, User, Post, Category, Comment,
-          FavoritePost, FavoriteComment, Like, UserMetric, RecoverPassword, LikeComment
+          FavoritePost, FavoriteComment, Like, UserMetric, RecoverPassword, LikeComment, Follower
         ]),
         UnitOfWorkModule,
         UserModule,
@@ -154,8 +155,6 @@ describe('UserService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
-
-  
 
   it('should throw bad request in findOne', async ()=> {
     await expect(service.findOne(NaN)).rejects.toThrow(BadRequestException);

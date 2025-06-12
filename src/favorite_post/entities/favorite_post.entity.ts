@@ -8,10 +8,10 @@ export class FavoritePost {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.favoritePosts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.favoritePosts, { onDelete: 'CASCADE', eager: true })
   user: User; 
 
-  @ManyToOne(() => Post, (post) => post.favoritePosts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Post, (post) => post.favoritePosts, { onDelete: 'CASCADE', eager: true })
   post: Post;
 
   @CreateDateColumn() 

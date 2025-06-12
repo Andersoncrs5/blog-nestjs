@@ -21,6 +21,9 @@ import { Comment } from '../../src/comment/entities/comment.entity';
 import { NotFoundException } from '@nestjs/common/exceptions';
 import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
+import * as redisStore from 'cache-manager-redis-store';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
+import { Follower } from '../../src/followers/entities/follower.entity';
 
 let app;
 
@@ -115,6 +118,15 @@ describe('PostMetricsService', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: async () => ({
+            store: redisStore as any,
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            ttl: parseInt(process.env.REDIS_TTL || '120'),
+          }),
+        }),
         TypeOrmModule.forRootAsync({
           useFactory() {
             return {
@@ -128,7 +140,7 @@ describe('PostMetricsService', () => {
               entities: [
                 User, Post, Category, Comment, FavoritePost,
                 FavoriteComment, Like, UserMetric, RecoverPassword,
-                LikeComment, PostMetric, CommentMetric
+                LikeComment, PostMetric, CommentMetric, Follower
               ],
               autoLoadEntities: true,
               synchronize: true,
@@ -140,7 +152,7 @@ describe('PostMetricsService', () => {
           }
         }),
         TypeOrmModule.forFeature([
-          CommentMetric, PostMetric, User, Post, Category, Comment,
+          CommentMetric, PostMetric, User, Post, Category, Comment, Follower,
           FavoritePost, FavoriteComment, Like, UserMetric, RecoverPassword, LikeComment
         ]),
         UnitOfWorkModule,
@@ -163,7 +175,15 @@ describe('PostMetricsService', () => {
         {
           provide: getRepositoryToken(PostMetric),
           useValue: mockRepository
-        }
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+          },
+        },
       ]
     }).compile()
 
