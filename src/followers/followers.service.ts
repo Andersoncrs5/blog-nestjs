@@ -12,7 +12,7 @@ export class FollowersService {
   ) {}
 
   async create(follower: User, following: User): Promise<Follower> {
-    const exists = await this.repository.findOne({ where: { follower, following } });
+    const exists: boolean = await this.repository.exists({ where: { follower, following } });
 
     if (exists) {
       throw new BadRequestException(`You already follow the user: ${following.name}`);
@@ -31,8 +31,7 @@ export class FollowersService {
   }
 
   async checkIfFollowing(follower: User, following: User): Promise<boolean> {
-    const exists = await this.repository.findOne({ where: { follower, following } });
-    return !!exists;
+    return await this.repository.exists({ where: { follower, following } });
   }
 
   async remove(id: number, follower: User): Promise<void> {
@@ -41,8 +40,7 @@ export class FollowersService {
     }
 
     const result: Follower | null = await this.repository.findOne({
-      where: { id },
-      relations: ['follower'],
+      where: { id }
     });
 
     if (!result) {

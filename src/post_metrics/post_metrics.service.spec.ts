@@ -594,5 +594,4 @@ describe('PostMetricsService', () => {
     expect(findOne).toHaveBeenCalledWith(post);
     expect(saveSpy).toHaveBeenCalledWith(metric);
   });
-
 });

@@ -30,28 +30,28 @@ describe('CategoryService', () => {
   let repository: Repository<Category>
   
   const mockUser: User = {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      password: 'hashedpassword123',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      refreshToken: null,
-      isAdm: false,
-      isBlocked: false,
-      version: 0,
-      posts: [],
-      categories: [],
-      comments: [],
-      favoritePosts: [],
-      favoriteComments: [],
-      likes: [],
-      metric: new UserMetric(),
-      recover: new RecoverPassword(),
-      likesComments: [],
-      hashPassword: async function (): Promise<void> {
-        throw new Error('Function not implemented.');
-      }
+    id: 1,
+    name: 'John Doe',
+    email: 'john@example.com',
+    password: 'hashedpassword123',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    refreshToken: null,
+    isAdm: false,
+    isBlocked: false,
+    version: 0,
+    posts: [],
+    categories: [],
+    comments: [],
+    favoritePosts: [],
+    favoriteComments: [],
+    likes: [],
+    metric: new UserMetric(),
+    recover: new RecoverPassword(),
+    likesComments: [],
+    hashPassword: async function (): Promise<void> {
+      throw new Error('Function not implemented.');
+    }
   };
 
   const mockCategory: Category = {
@@ -284,5 +284,4 @@ describe('CategoryService', () => {
 
       expect(result).toEqual({ affected: 1 });
   });
-
 });

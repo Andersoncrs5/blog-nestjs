@@ -16,7 +16,7 @@ export class LikeCommentService {
   
   @Transactional()
   async create(user: User, comment: Comment, action: LikeOrDislike): Promise<LikeComment> {
-    const existing = await this.repository.findOne({
+    const existing: boolean = await this.repository.exists({
       where: { user, comment },
     });
     
@@ -24,7 +24,7 @@ export class LikeCommentService {
       throw new ConflictException('Action already exists');
     }
 
-    const actionSave = this.repository.create({ user, comment, action });
+    const actionSave: LikeComment = this.repository.create({ user, comment, action });
     return await this.repository.save(actionSave);
   }
 

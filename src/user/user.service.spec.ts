@@ -1,4 +1,3 @@
-
 import { DataSource, Repository, UpdateResult } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserController } from './user.controller';
