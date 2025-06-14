@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../src/user/entities/user.entity';
 import { Post } from '../../src/post/entities/post.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class CommentService {
@@ -22,6 +22,7 @@ export class CommentService {
     return await this.repository.save(comment);
   }
 
+  @Transactional()
   async findAllOfPost(post: Post, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -38,6 +39,7 @@ export class CommentService {
     };
   }
 
+  @Transactional()
   async findAllOfUser(user: User, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -54,6 +56,7 @@ export class CommentService {
     };
   }
 
+  @Transactional()
   async findAllOfComment(comment: Comment, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -70,6 +73,7 @@ export class CommentService {
     };
   }
 
+  @Transactional()
   async findOne(id: number): Promise<Comment> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');

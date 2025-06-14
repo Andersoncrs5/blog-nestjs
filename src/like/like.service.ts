@@ -4,7 +4,7 @@ import { Like } from './entities/like.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../src/user/entities/user.entity';
 import { Post } from '../../src/post/entities/post.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { LikeOrDislike } from './entities/likeOrDislike.enum';
 
 @Injectable()
@@ -33,6 +33,7 @@ export class LikeService {
     return await this.repository.save(likeSave);
   }
 
+  @Transactional()
   async findAllOfUser(user: User, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -49,6 +50,7 @@ export class LikeService {
     };
   }
 
+  @Transactional()
   async findOne(id: number): Promise<Like> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');
@@ -61,6 +63,7 @@ export class LikeService {
     return like;
   }
 
+  @Transactional()
   async exists(user: User, post: Post): Promise<boolean> {
     return  await this.repository.exists({ where: { user, post } });
   }

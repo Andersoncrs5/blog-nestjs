@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '../../src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class AuthService {
@@ -31,7 +31,7 @@ export class AuthService {
 
     user.refreshToken = refreshToken;
     user.version = user.version;
-    this.repository.save(user);
+    await this.repository.save(user);
 
     return { access_token: accessToken, refresh_token: refreshToken };
   }
@@ -48,17 +48,20 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido');
     }
 
-    const newAccessToken = this.jwtService.sign(
-      { 
-        sub: foundUser.id, 
-        email: foundUser.email, 
-        isAdm: foundUser.isAdm, 
-        isBlocked: foundUser.isBlocked 
-      }
-    );
+    const structTokens = { 
+      sub: foundUser.id, 
+      email: foundUser.email, 
+      isAdm: foundUser.isAdm, 
+      isBlocked: foundUser.isBlocked 
+    }
 
-    return { access_token: newAccessToken };
+    const accessToken = this.jwtService.sign(structTokens); 
+    const newRefreshToken = this.jwtService.sign(structTokens, { expiresIn: '7d' });
+
+    foundUser.refreshToken = newRefreshToken;
+    foundUser.version = foundUser.version;
+    this.repository.save(foundUser);
+
+    return { access_token: accessToken, refresh_token: newRefreshToken };
   }
-
-
 }

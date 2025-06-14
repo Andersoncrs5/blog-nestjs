@@ -31,13 +31,13 @@ export class Comment {
   @VersionColumn()
   version: number;
 
-  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE', eager: true })
+  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE', eager: true, nullable: false })
   user : User; 
 
-  @ManyToOne(() => Post, (post) => post.comments, { onDelete: 'CASCADE', eager: true })
+  @ManyToOne(() => Post, (post) => post.comments, { onDelete: 'CASCADE', eager: true, nullable: false })
   post: Post; 
 
-  @OneToOne(() => CommentMetric, metric => metric.comment, { cascade: true, eager: true })
+  @OneToOne(() => CommentMetric, metric => metric.comment, { cascade: true, nullable: false })
   @JoinColumn()
   metric: CommentMetric
 

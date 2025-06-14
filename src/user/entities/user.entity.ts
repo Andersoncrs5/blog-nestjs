@@ -24,7 +24,7 @@ export class User {
     email: string
 
     @Column({ type: "varchar" , length: 350 })
-    password: string
+    password!: string
 
     @Column({ type: "varchar", nullable: true })
     refreshToken: string | null
@@ -62,7 +62,7 @@ export class User {
     @OneToMany(() => Like, (like) => like.user)
     likes: Like[];
 
-    @OneToOne(() => UserMetric, metric => metric.user, { cascade: true, eager: true } )
+    @OneToOne(() => UserMetric, metric => metric.user, { cascade: true } )
     @JoinColumn()
     metric: UserMetric;
 
@@ -78,7 +78,6 @@ export class User {
 
     @OneToMany(() => Follower, (follower) => follower.following)
     followers?: Follower[];
-
 
     @BeforeInsert()
     @BeforeUpdate()

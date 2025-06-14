@@ -32,4 +32,6 @@ export class CreateUserDto {
 
     @IsOptional()
     version?;
+    @IsOptional()
+    isBlocked?: boolean;
 }

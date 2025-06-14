@@ -15,7 +15,7 @@ export class RecoverPassword {
     @Column({ default: false })
     used: boolean;
 
-    @OneToOne(() => User, user => user.recover )
+    @OneToOne(() => User, user => user.recover, { nullable: false, eager: true })
     user: User;
 
     @CreateDateColumn()

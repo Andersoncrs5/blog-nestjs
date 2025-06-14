@@ -7,10 +7,10 @@ export class FavoriteComment {
     @PrimaryGeneratedColumn() 
     id: number;
 
-    @ManyToOne(() => User, (user) => user.favoriteComments, { onDelete: 'CASCADE', eager: true })
+    @ManyToOne(() => User, (user) => user.favoriteComments, { onDelete: 'CASCADE', eager: true, nullable: false })
     user: User; 
 
-    @ManyToOne(() => Comment, (Comment) => Comment.favoriteComments, { onDelete: 'CASCADE', eager: true })
+    @ManyToOne(() => Comment, (Comment) => Comment.favoriteComments, { onDelete: 'CASCADE', eager: true, nullable: false })
     comment: Comment;
 
     @CreateDateColumn() 

@@ -7,7 +7,7 @@ import { UnitOfWorkModule } from '../../src/utils/UnitOfWork/UnitOfWork.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserMetric])
-  , forwardRef(() => UnitOfWorkModule)], 
+  ,forwardRef(() => UnitOfWorkModule)], 
   controllers: [UserMetricsController],
   providers: [UserMetricsService],
   exports: [UserMetricsService]

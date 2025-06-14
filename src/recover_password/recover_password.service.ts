@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, UnauthorizedExcepti
 import { RecoverPassword } from './entities/recover_password.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { User } from '../../src/user/entities/user.entity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,11 +24,10 @@ export class RecoverPasswordService {
         user: String(process.env.EMAIL),
         pass: String(process.env.PASSWORD),
       }
-    });
+  });
 
   @Transactional()
   async requestPasswordReset(user: User) {
-    
     await this.repository.delete({ user })
 
     const token: string = randomUUID()
@@ -47,6 +46,7 @@ export class RecoverPasswordService {
     await this.sendResetEmail(user.email, link, token)
   }
 
+  @Transactional()
   async sendResetEmail(to: string, linkUrl: string, token: string) {
     if (token == null) { throw new BadRequestException('Token is required') }
 
@@ -96,6 +96,7 @@ export class RecoverPasswordService {
     return data;
   }
 
+  @Transactional()
   async sendEmailOfWelcome(to: string, name: string) {
     if (!to || !name ) { throw new NotFoundException('Error the send email of welcome') }
 

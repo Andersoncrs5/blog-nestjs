@@ -5,7 +5,7 @@ import { Post } from './entities/post.entity';
 import { Like, Repository, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { PaginationDto } from '../../src/utils/pagination.util';
 import { FilterPostDto } from './dto/filterPost.dto';
@@ -26,6 +26,7 @@ export class PostService {
     return await this.repository.save(post);
   }
 
+  @Transactional()
   async findAll(page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -43,6 +44,7 @@ export class PostService {
     };
   }
 
+  @Transactional()
   async findAllOfUser(
     user: User,
     page: number,
@@ -142,6 +144,7 @@ export class PostService {
     });
   }
 
+  @Transactional()
   async findByCategory(category: Category, page: number, limit: number){  
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -159,6 +162,7 @@ export class PostService {
     };
   }
 
+  @Transactional()
   async findByTitle(title: string, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -176,6 +180,7 @@ export class PostService {
     };
   }
 
+  @Transactional()
   async findOne(id: number): Promise<Post> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');
@@ -203,6 +208,7 @@ export class PostService {
     await this.repository.delete(postExists);
   }
 
+  @Transactional()
   async filter(filter: FilterPostDto, pagination: PaginationDto) {
     const {
       title,

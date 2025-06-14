@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { FavoritePost } from './entities/favorite_post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { User } from '../../src/user/entities/user.entity';
 import { Post } from '../../src/post/entities/post.entity';
 import { IPaginationMeta, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -24,6 +24,7 @@ export class FavoritePostService {
     return await this.repository.save(created);
   }
 
+  @Transactional()
   async findAllOfUser(user: User, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -40,6 +41,7 @@ export class FavoritePostService {
     };
   }
 
+  @Transactional()
   async exists(user: User, post: Post): Promise<boolean> {
     const count = await this.repository.count({ where: { user, post } });
     return count > 0;

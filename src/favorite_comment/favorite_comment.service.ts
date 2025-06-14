@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Comment } from '../../src/comment/entities/comment.entity';
 import { User } from '../../src/user/entities/user.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { FavoriteComment } from './entities/favorite_comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -24,10 +24,12 @@ export class FavoriteCommentService {
     return await this.repository.save(created);
   }
 
+  @Transactional()
   async existsItem(user: User, comment: Comment): Promise<boolean> {
     return await this.repository.exists({ where: { user, comment } });
   }
 
+  @Transactional()
   async findAllOfUser(user: User, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -44,6 +46,7 @@ export class FavoriteCommentService {
     };
   }
 
+  @Transactional()
   async findOne(id: number): Promise<FavoriteComment> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');

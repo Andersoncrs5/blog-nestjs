@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { UserMetric } from './entities/user_metric.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,7 +15,6 @@ export class UserMetricsService {
     private readonly repository: Repository<UserMetric>,
     @Inject(CACHE_MANAGER)
     private cache: Cache
-
   ) {}
 
   @Transactional()
@@ -28,7 +27,7 @@ export class UserMetricsService {
       metric.profileViews -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -42,7 +41,7 @@ export class UserMetricsService {
       metric.editedCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -56,7 +55,7 @@ export class UserMetricsService {
       metric.savedMediaCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -70,7 +69,7 @@ export class UserMetricsService {
       metric.followingCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -84,7 +83,7 @@ export class UserMetricsService {
       metric.followersCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -98,7 +97,7 @@ export class UserMetricsService {
       metric.savedCommentsCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -112,7 +111,7 @@ export class UserMetricsService {
       metric.savedPostsCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -126,7 +125,7 @@ export class UserMetricsService {
       metric.mediaUploadsCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -140,7 +139,7 @@ export class UserMetricsService {
       metric.reportsReceivedCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
   
@@ -154,7 +153,7 @@ export class UserMetricsService {
       metric.sharesCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -176,7 +175,7 @@ export class UserMetricsService {
       metric.deslikesGivenCountInPost -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -198,7 +197,7 @@ export class UserMetricsService {
       metric.deslikesGivenCountInComment -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -212,7 +211,7 @@ export class UserMetricsService {
       metric.commentsCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -226,7 +225,7 @@ export class UserMetricsService {
       metric.postsCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -240,7 +239,7 @@ export class UserMetricsService {
       metric.followingCount -= 1;
     }
 
-    const result = this.update(metric, metric.user);
+    const result = await this.update(metric, metric.user);
     return result;
   }
 
@@ -250,13 +249,16 @@ export class UserMetricsService {
       throw new BadRequestException('User is required');
     }
 
-    const created = this.repository.create(user); 
-    return await this.repository.save(created);
+    const data = { user }
+    const created = this.repository.create(data); 
+    const result = await this.repository.save(created);
+    console.log('Metric created:' + result.user)
+    return result
   }
 
-  @Transactional()
+  @Transactional() 
   async findOneV2(user: User): Promise<UserMetric> {
-
+    console.log('Id of user:' + user.id)
     const key = `user_metric:${user.id}`
     const metricCache = await this.cache.get<UserMetric>(key);
 
@@ -264,9 +266,11 @@ export class UserMetricsService {
       return metricCache
     }
 
-    const metric: UserMetric | null = await this.repository.findOne({ where: { user } })
+    const metric: UserMetric | null = await this.repository.findOne({ where: { user : { id: user.id } } })
 
+    console.log('Metric :' + metric )
     if (metric == null) {
+      console.log('Metric user not found')
       throw new NotFoundException;
     }
 
@@ -283,13 +287,13 @@ export class UserMetricsService {
     metric.version = existingMetric.version;
 
     const key = `user_metric:${user.id}`
-    const result = await this.repository.save(metric);
+    const result = await await this.repository.save(metric);
     await this.cache.set(key, metric, 60)
 
     return result
   }
 
-  @Transactional()
+  @Transactional() 
   async findOne(user: User): Promise<UserMetric> {
     const metric: UserMetric | null = await this.repository.findOne({ where: { user } })
 

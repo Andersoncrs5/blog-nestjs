@@ -3,7 +3,7 @@ import { CommentMetric } from './entities/comment_metric.entity';
 import { Repository } from 'typeorm';
 import { Comment } from "../../src/comment/entities/comment.entity";
 import { InjectRepository } from '@nestjs/typeorm';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
@@ -93,6 +93,7 @@ export class CommentMetricsService {
     return await this.repository.save(created);
   }
 
+  @Transactional()
   async findOne(comment: Comment) {
     if (comment == null || comment.id <= 0 ) {
       throw new BadRequestException;

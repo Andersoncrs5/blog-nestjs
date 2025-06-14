@@ -6,9 +6,10 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from '../../CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
     @Inject(CACHE_MANAGER) private cache: Cache
   ) {}
 
+  @Transactional()
   async findOneV2(id: number): Promise<User> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');
@@ -39,6 +41,7 @@ export class UserService {
     return user;
   }
 
+  @Transactional()
   async findOneByEmail(email: string): Promise<User> {
     if (!email || email == "") { throw new BadRequestException('Email is required'); }
 
@@ -57,12 +60,13 @@ export class UserService {
 
     if (check) {  throw new ConflictException('Email in used'); }
 
-    const user: User = await this.repository.create(createUserDto);
+    const user: User = this.repository.create(createUserDto);
     const userSave: User = await this.repository.save(user);
 
     return userSave;
   }
 
+  @Transactional()
   async findOne(id: number): Promise<User> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');
@@ -79,13 +83,10 @@ export class UserService {
 
   @Transactional()
   async update(user: User, updateUserDto: UpdateUserDto) {
-    // if (updateUserDto.password) {
-    //   updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
-    // }
+    const updatedUser = this.repository.merge(user, updateUserDto); 
+    const savedUser = await this.repository.save(updatedUser); 
 
-    const data = { ...updateUserDto, version: user.version }
-
-    return await this.repository.update(user.id, data);
+    return savedUser;
   }
 
   @Transactional()
@@ -95,14 +96,16 @@ export class UserService {
   
   @Transactional()
   async LoginAsync(userDto: LoginUserDTO) {
-    const email = userDto.email.trim();
-    const foundUser = await this.repository.findOne({ where: { email } });
+    const email = userDto.email;
+    const password = userDto.password;
+    const foundUser: User | null = await this.repository.findOne({ where: { email } });
   
-    if (!foundUser || !(await CryptoService.compare(userDto.password, foundUser.password))) {
+    if (foundUser == null || bcrypt.compare(password, foundUser.password) == false ) {
       throw new UnauthorizedException('Invalid credentials');
     }
   
     if (foundUser.isBlocked) {
+      console.log('You are blocked!!!')
       throw new UnauthorizedException('You are blocked!!!');
     }
 
@@ -116,5 +119,4 @@ export class UserService {
     await this.cache.del(key)
     await this.repository.save(user);
   }  
-
 }

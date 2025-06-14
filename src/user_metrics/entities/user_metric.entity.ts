@@ -1,5 +1,5 @@
 import { User } from "../../../src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 
 @Entity()
 export class UserMetric {
@@ -73,7 +73,7 @@ export class UserMetric {
     @VersionColumn()
     version: number;
 
-    @OneToOne(() => User, user => user.metric )
+    @OneToOne(() => User, user => user.metric, { nullable: false, eager: true })
     user: User;
 
     @CreateDateColumn()

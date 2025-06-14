@@ -3,7 +3,7 @@ import { Post } from '../../src/post/entities/post.entity';
 import { PostMetric } from './entities/post_metric.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { ActionEnum } from '../../src/user_metrics/action/ActionEnum.enum';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
@@ -127,6 +127,7 @@ export class PostMetricsService {
     return await this.repository.save(created);
   }
 
+  @Transactional()
   async findOne(post: Post): Promise<PostMetric> {
     const metric: PostMetric | null = await this.repository.findOne({ where : { post } })
 
@@ -147,6 +148,7 @@ export class PostMetricsService {
     return await this.repository.save(metric);
   }
 
+  @Transactional()
   async sameViewed(metric: PostMetric, amount: number = 1): Promise<PostMetric> {
     metric.viewed += amount;
     return await this.update(metric);

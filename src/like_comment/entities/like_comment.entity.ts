@@ -8,10 +8,10 @@ export class LikeComment {
     @PrimaryGeneratedColumn() 
     id: number;
 
-    @ManyToOne(() => User, (user) => user.likesComments, { onDelete: 'CASCADE', eager: true })
+    @ManyToOne(() => User, (user) => user.likesComments, { onDelete: 'CASCADE', eager: true, nullable: false })
     user: User; 
 
-    @ManyToOne(() => Comment, (comment) => comment.likesComments, { onDelete: 'CASCADE', eager: true })
+    @ManyToOne(() => Comment, (comment) => comment.likesComments, { onDelete: 'CASCADE', eager: true, nullable: false })
     comment: Comment; 
 
     @Column({type: 'enum',enum: LikeOrDislike})

@@ -3,7 +3,7 @@ import { LikeComment } from './entities/like_comment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from '../../src/comment/entities/comment.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { User } from '../../src/user/entities/user.entity';
 import { LikeOrDislike } from '../../src/like/entities/likeOrDislike.enum';
 
@@ -28,6 +28,7 @@ export class LikeCommentService {
     return await this.repository.save(actionSave);
   }
 
+  @Transactional()
   async findAllOfUser(user: User, page: number, limit: number) {
     const [result, count] = await this.repository.findAndCount({ 
       skip: (page - 1) * limit,
@@ -45,12 +46,14 @@ export class LikeCommentService {
     };
   }
 
+  @Transactional()
   async exists(user: User, comment: Comment): Promise<boolean> {
     return await this.repository.exists({
       where: { user, comment },
     });
   }
 
+  @Transactional()
   async findOne(id: number) {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');

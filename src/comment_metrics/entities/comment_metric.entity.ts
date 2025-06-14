@@ -37,7 +37,7 @@ export class CommentMetric {
     @VersionColumn()
     version: number;
 
-    @OneToOne(() => Comment, comment => comment.metric )
+    @OneToOne(() => Comment, comment => comment.metric, { onDelete: 'CASCADE', eager: true, nullable: false })
     comment: Comment;
 
     @CreateDateColumn()

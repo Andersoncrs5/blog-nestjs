@@ -26,10 +26,6 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalFilters(new AllExceptionsFilter()); 
 
-  app.enableVersioning({
-    type: VersioningType.URI,
-  });
-
   const config: Omit<OpenAPIObject, "paths"> = new DocumentBuilder()
     .setTitle('Blog simples em NestJS')
     .setDescription('API para um blog desenvolvido em NestJS')

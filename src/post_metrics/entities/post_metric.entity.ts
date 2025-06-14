@@ -51,7 +51,7 @@ export class PostMetric {
     @Column({ type: 'boolean', default: false })
     isTrending: boolean; // -
 
-    @OneToOne(() => Post, post => post.metric )
+    @OneToOne(() => Post, post => post.metric, { nullable: false, eager: true })
     post: Post;
 
     @CreateDateColumn()

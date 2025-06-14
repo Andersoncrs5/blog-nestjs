@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { User } from '../../src/user/entities/user.entity';
-import { Transactional } from 'typeorm-transactional';
+import { Propagation, Transactional } from 'typeorm-transactional';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
@@ -29,6 +29,7 @@ export class CategoryService {
     return await this.repository.save(category);
   }
 
+  @Transactional()
   async findAllV2(): Promise<Category[]> {
     const key = `category:all`
 
@@ -45,11 +46,13 @@ export class CategoryService {
     return result;
   }
 
+  @Transactional()
   async findAll(): Promise<Category[]> {
     const result = await this.repository.find({ where: { isActived: true } });
     return result;
   }
 
+  @Transactional()
   async findOne(id: number): Promise<Category> {
     if (!id || isNaN(id) || id <= 0) {
       throw new BadRequestException('ID must be a positive number');

@@ -26,16 +26,16 @@ export class Post {
     @VersionColumn()
     version: number;
 
-    @ManyToOne(() => Category, (category) => category.posts, { onDelete : 'CASCADE' } )
+    @ManyToOne(() => Category, (category) => category.posts, { onDelete : 'CASCADE', eager: true, nullable: false })
     category: Category
 
-    @ManyToOne(() => User, (user) => user.posts, { onDelete : 'CASCADE' } )
+    @ManyToOne(() => User, (user) => user.posts, { onDelete : 'CASCADE', eager: true, nullable: false })
     user: User
 
     @OneToMany(() => Comment, (comment) => comment.post )
     comments: Comment[];
 
-    @OneToOne(() => PostMetric, metric => metric.post, { cascade: true, eager: true })
+    @OneToOne(() => PostMetric, metric => metric.post, { cascade: true, nullable: false })
     @JoinColumn()
     metric: PostMetric
 
