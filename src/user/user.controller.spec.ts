@@ -24,6 +24,9 @@ import { UserService } from './user.service';
 import { randomUUID } from 'crypto';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as redisStore from 'cache-manager-redis-store';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
+import { Follower } from 'src/followers/entities/follower.entity';
 
 describe('UserController', () => {
   let app: INestApplication;
@@ -34,6 +37,15 @@ describe('UserController', () => {
     
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: async () => ({
+            store: redisStore as any,
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            ttl: parseInt(process.env.REDIS_TTL || '120'),
+          }),
+        }),
         TypeOrmModule.forRootAsync({
           useFactory() { 
             return {
@@ -45,18 +57,9 @@ describe('UserController', () => {
               database: 'test',
               dropSchema: true,
               entities: [
-                User, 
-                Post, 
-                Category, 
-                Comment, 
-                FavoritePost, 
-                FavoriteComment, 
-                Like, 
-                UserMetric, 
-                RecoverPassword, 
-                LikeComment,
-                PostMetric,
-                CommentMetric
+                User, Post, Category, Comment, FavoritePost,
+                FavoriteComment, Like, UserMetric, RecoverPassword,
+                LikeComment, PostMetric, CommentMetric, Follower
               ],
               autoLoadEntities: true,
               synchronize: true,
@@ -69,18 +72,9 @@ describe('UserController', () => {
           }
         }),
         TypeOrmModule.forFeature([
-          CommentMetric, 
-          PostMetric, 
-          User, 
-          Post, 
-          Category, 
-          Comment, 
-          FavoritePost, 
-          FavoriteComment, 
-          Like, 
-          UserMetric, 
-          RecoverPassword, 
-          LikeComment
+          User, Post, Category, Comment, FavoritePost,
+          FavoriteComment, Like, UserMetric, RecoverPassword,
+          LikeComment, PostMetric, CommentMetric, Follower
         ]),
         UnitOfWorkModule,
         UserModule
@@ -177,44 +171,44 @@ describe('UserController', () => {
     expect(responseGetUser.body.data.id).not.toBeNull();
   });
 
-  // it('/GET hould get the profile of another user', async ()=> {
-  //   const dto: CreateUserDto = {
-  //     name: 'user',
-  //     email: `user${randomUUID()}@gmail.com`,
-  //     password: '12345678'
-  //   };
+  /* it('/GET hould get the profile of another user', async ()=> {
+    const dto: CreateUserDto = {
+      name: 'user',
+      email: `user${randomUUID()}@gmail.com`,
+      password: '12345678'
+    };
 
-  //   const response = await request(app.getHttpServer())
-  //     .post('/user/register')
-  //     .send(dto)
-  //     .expect(201);
+    const response = await request(app.getHttpServer())
+      .post('/user/register')
+      .send(dto)
+      .expect(201);
 
-  //   const dto1: CreateUserDto = {
-  //     name: 'user',
-  //     email: `user${randomUUID()}@gmail.com`,
-  //     password: '12345678'
-  //   };
+    const dto1: CreateUserDto = {
+      name: 'user',
+      email: `user${randomUUID()}@gmail.com`,
+      password: '12345678'
+    };
 
-  //   await request(app.getHttpServer())
-  //     .post('/user/register')
-  //     .send(dto1)
-  //     .expect(201);
+    await request(app.getHttpServer())
+      .post('/user/register')
+      .send(dto1)
+      .expect(201);
 
-  //   const token: string = response.body.data.access_token;
+    const token: string = response.body.data.access_token;
     
-  //   const responseseeProfileOfUser = await request(app.getHttpServer())
-  //     .get(`/user/see-profile-of-user/${dto1.email.trim().toLowerCase()}`)
-  //     .auth(token, { type: "bearer" })
-  //     .expect(200);
+    const responseseeProfileOfUser = await request(app.getHttpServer())
+      .get(`/user/see-profile-of-user/${dto1.email.trim().toLowerCase()}`)
+      .auth(token, { type: "bearer" })
+      .expect(200);
     
-  //   expect(responseseeProfileOfUser.body.message).toBe("User founded!!");
-  //   expect(responseseeProfileOfUser.body.data).toHaveProperty('id');
-  //   expect(responseseeProfileOfUser.body.data).toHaveProperty('email');
-  //   expect(responseseeProfileOfUser.body.data).toHaveProperty('name');
-  //   expect(responseseeProfileOfUser.body.data.name).toBe(dto1.name);
-  //   expect(responseseeProfileOfUser.body.data.email).toBe(dto1.email);
-  //   expect(responseseeProfileOfUser.body.data.id).not.toBeNull();
-  // });
+    expect(responseseeProfileOfUser.body.message).toBe("User founded!!");
+    expect(responseseeProfileOfUser.body.data).toHaveProperty('id');
+    expect(responseseeProfileOfUser.body.data).toHaveProperty('email');
+    expect(responseseeProfileOfUser.body.data).toHaveProperty('name');
+    expect(responseseeProfileOfUser.body.data.name).toBe(dto1.name);
+    expect(responseseeProfileOfUser.body.data.email).toBe(dto1.email);
+    expect(responseseeProfileOfUser.body.data.id).not.toBeNull();
+  }); */
 
   it('/DELETE should delete the user', async ()=> {
     const dto: CreateUserDto = {
